@@ -15,10 +15,17 @@ pnpm-debug.log*
 # Env
 .env
 .env.*
+!.env.example
 .envrc
 .venv
 venv/
 ENV/
+
+# Qdrant & Vector DB Local Cache
+qdrant_storage/
+*.db
+temp_*
+metadata_output.json
 
 # Editor / OS
 .vscode/*
@@ -31,7 +38,7 @@ ENV/
 *.sln
 *.sw?
 
-# Python (existing Facebook bot in src/backend)
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
