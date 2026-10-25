@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        sidepanel: path.resolve(__dirname, 'sidepanel.html')
+        sidepanel: path.resolve(import.meta.dirname, 'sidepanel.html')
       },
       output: {
         entryFileNames: '[name].js'

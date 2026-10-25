@@ -23,5 +23,5 @@ export type ChromeMessageType =
 
 export interface ChromeMessage {
   type: ChromeMessageType;
-  data?: any;
+  data?: ProductItem | ProductItem[];
 }

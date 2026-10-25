@@ -5,9 +5,12 @@
   "description": "Tap anything, buy anywhere",
   "permissions": ["activeTab", "sidePanel", "scripting"],
   "action": {
-    "default_title": "TAP AI"
+    "default_title": "Mở TAP AI"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }
