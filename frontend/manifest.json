@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "TAP AI - Shoppable Media",
+  "version": "1.0.0",
+  "description": "Tap anything, buy anywhere",
+  "permissions": ["activeTab", "sidePanel", "scripting"],
+  "action": {
+    "default_title": "TAP AI"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
+}
