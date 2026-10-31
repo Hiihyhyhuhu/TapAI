@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
 from models.search_schemas import EcomSearchQuery, ProductCandidate
+from services.seasonality import SeasonalityEngine
 
 load_dotenv()
 
@@ -43,12 +44,38 @@ class MultimodalReranker:
             pass
         return None
 
+    @staticmethod
+    def calculate_ranking_score(
+        similarity_score: float,
+        commission_rate: float = 0.05,
+        A: float = 0.75,
+        B: float = 0.10,
+        min_gate: float = 0.60
+    ) -> float:
+        """
+        Tính điểm xếp hạng tổng hợp cân bằng theo biên Pareto (Optuna):
+        Total_score = A * similarity_score + B * norm_commission
+        - Nếu similarity < min_gate (0.60): Phạt điểm nặng để không bao giờ lọt vào Top 1.
+        - Chuẩn hóa commission_rate từ [0.01, 0.25] về [0.0, 1.0].
+        """
+        if similarity_score < min_gate:
+            return round(similarity_score * 0.5, 4)
+
+        norm_comm = (commission_rate - 0.01) / (0.25 - 0.01)
+        norm_comm = max(0.0, min(1.0, norm_comm))
+
+        total = (A * similarity_score) + (B * norm_comm)
+        return round(total, 4)
+
     async def rerank(
         self,
         crop_image_path: str,
         query_obj: EcomSearchQuery,
         candidates: List[ProductCandidate],
-        top_k: int = 5
+        top_k: int = 5,
+        weight_visual: Optional[float] = None,
+        weight_commission: Optional[float] = None,
+        min_similarity_gate: Optional[float] = None
     ) -> List[ProductCandidate]:
         """
         Dùng Vision-LLM (Gemini) trực tiếp đối chiếu ảnh crop gốc với ảnh sản phẩm sàn:
@@ -120,6 +147,28 @@ class MultimodalReranker:
         except Exception as e:
             print(f"⚠️ Lỗi trong quá trình VLM Reranking: {e}")
 
-        # 4. Sắp xếp giảm dần theo match_score
-        ranked = sorted(candidates, key=lambda x: x.match_score or 0.0, reverse=True)
+        # 4. Tự động nhận diện trọng số theo mùa (Auto-Seasonality) nếu không chỉ định thủ công
+        season_profile = SeasonalityEngine.get_weights()
+        w_visual = weight_visual if weight_visual is not None else season_profile["A"]
+        w_comm = weight_commission if weight_commission is not None else season_profile["B"]
+        w_gate = min_similarity_gate if min_similarity_gate is not None else season_profile["min_gate"]
+
+        print(f"🎯 [AUTO-SEASONALITY] Áp dụng profile '{season_profile['campaign_key']}': A={w_visual}, B={w_comm}, Gate={w_gate} ({season_profile['name']})")
+
+        # 5. Tính điểm xếp hạng kết hợp (Multi-objective Pareto Ranking)
+        for cand in candidates:
+            cand.ranking_score = self.calculate_ranking_score(
+                similarity_score=cand.match_score or 0.0,
+                commission_rate=getattr(cand, "commission_rate", 0.05) or 0.05,
+                A=w_visual,
+                B=w_comm,
+                min_gate=w_gate
+            )
+
+        # 6. Sắp xếp giảm dần theo ranking_score (hoặc match_score dự phòng)
+        ranked = sorted(
+            candidates, 
+            key=lambda x: (x.ranking_score if x.ranking_score is not None else (x.match_score or 0.0)), 
+            reverse=True
+        )
         return ranked[:top_k]

@@ -175,7 +175,7 @@ class ShopeeWebSearcher:
                     if prod.price == "Xem trên sàn" and shopping_prices:
                         prod.price = f"~{shopping_prices[idx % len(shopping_prices)]}"
 
-                if len(valid_list) >= 8:
+                if len(valid_list) >= max_results:
                     return valid_list[:max_results]
 
         return list(candidates_map.values())[:max_results]

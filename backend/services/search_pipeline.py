@@ -80,7 +80,8 @@ class TapAISearchPipeline:
         print(f"   [1/3] VLM Query Gen: {query_info.exact_query} (trong {t_b - t_a:.2f}s)")
 
         # 4. Quét sản phẩm sàn TMĐT qua Serper (Module B)
-        raw_candidates = await self.searcher.search_products(query_info, max_results=12)
+        max_search_results = max(25, top_k + 5)
+        raw_candidates = await self.searcher.search_products(query_info, max_results=max_search_results)
         t_c = time.perf_counter()
         print(f"   [2/3] Web Searcher: Thu được {len(raw_candidates)} ứng viên (trong {t_c - t_b:.2f}s)")
 

@@ -48,3 +48,6 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+output_tasks/
+test_async_tasks.py
+test_schema_and_cors.py
