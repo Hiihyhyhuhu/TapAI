@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TAP AI — Merchant Partner Portal</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310B981'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            panel: '#0B0D13',
+            surface: '#11141D',
+            elevated: '#171B26',
+            highlight: '#1E2332',
+            subtle: '#282F44',
+            border: '#202637',
+            'border-light': '#2D354D',
+            brand: '#10B981',
+            'brand-focus': '#059669',
+            'brand-subtle': 'rgba(16, 185, 129, 0.08)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: #0B0D13;
+      color: #F1F5F9;
+      letter-spacing: -0.011em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    /* Fix triệt để lỗi phông chữ tiếng Việt cho văn bản hợp đồng */
+    .contract-document, .contract-document * {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+      letter-spacing: normal !important;
+      word-spacing: normal !important;
+    }
+
+    /* Precision hairline borders */
+    .border-hairline { border: 1px solid #1E2436; }
+    .border-hairline-b { border-bottom: 1px solid #1E2436; }
+    .border-hairline-t { border-top: 1px solid #1E2436; }
+    .border-hairline-r { border-right: 1px solid #1E2436; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #262D42; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #37415E; }
+
+    /* Focus ring for accessibility */
+    *:focus-visible {
+      outline: 2px solid #10B981;
+      outline-offset: 1px;
+    }
+
+    /* Skeleton loader */
+    @keyframes shimmer {
+      0% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { opacity: 0.3; }
+    }
+    .skeleton {
+      background: #171B26;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    /* Buttons */
+    .btn-solid-primary {
+      background: #10B981;
+      color: #061A13;
+      font-weight: 600;
+      border-radius: 7px;
+      padding: 7px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-solid-primary:hover { background: #34D399; }
+    .btn-solid-primary:active { background: #059669; }
+
+    .btn-subtle {
+      background: #171B26;
+      border: 1px solid #282F44;
+      color: #E2E8F0;
+      font-weight: 500;
+      border-radius: 7px;
+      padding: 7px 13px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-subtle:hover { background: #1E2332; border-color: #37415E; color: #FFFFFF; }
+
+    .btn-ghost {
+      background: transparent;
+      color: #94A3B8;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 120ms ease, background 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-ghost:hover { color: #FFFFFF; background: #171B26; }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: #F87171;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .btn-danger-ghost:hover { background: rgba(239, 68, 68, 0.12); }
+
+    /* Inputs */
+    .input-field {
+      background: #0D1018;
+      border: 1px solid #242B3D;
+      border-radius: 7px;
+      color: #F1F5F9;
+      font-size: 13px;
+      padding: 8px 12px;
+      transition: border-color 120ms ease;
+      width: 100%;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #10B981;
+      box-shadow: 0 0 0 1px #10B981;
+    }
+    .input-field::placeholder { color: #475569; }
+
+    /* Custom Toast */
+    @keyframes toastSlide {
+      from { transform: translateY(8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-anim { animation: toastSlide 150ms ease-out forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-brand selection:text-panel">
+
+  <!-- Toast Container (Top-most Layer above all modals) -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+
+  <!-- Primary Header Bar -->
+  <header class="bg-surface border-hairline-b sticky top-0 z-30">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      
+      <!-- Left: Logo & Workspace Context -->
+      <div class="flex items-center gap-4">
+        <a href="javascript:void(0)" onclick="switchTab('dashboard')" class="flex items-center gap-2.5" aria-label="Trang chủ TAP AI">
+          <div class="w-7 h-7 rounded bg-brand flex items-center justify-center font-bold text-panel text-xs">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span class="font-bold text-[14px] text-white tracking-tight">TAP AI</span>
+          <span class="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-subtle text-slate-300">MERCHANT</span>
+        </a>
+
+        <!-- Breadcrumb / Active Context -->
+        <div id="header-context" class="hidden md:flex items-center gap-2 text-xs border-l border-border pl-4 text-slate-400">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Center: Navigation Tabs (Desktop, visible when logged in) -->
+      <nav id="nav-tabs" class="hidden md:flex items-center gap-1 bg-panel p-1 rounded-lg border border-border" aria-label="Desktop Navigation">
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-3.5 py-1.5 rounded-md text-xs font-semibold text-brand bg-elevated border border-border transition min-h-[36px]">
+          Tổng quan
+        </button>
+        <button onclick="switchTab('products')" id="tab-btn-products" class="px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition min-h-[36px]">
+          Sản phẩm &amp; Đấu thầu CPC
+        </button>
+        <button onclick="switchTab('reconciliation')" id="tab-btn-reconciliation" class="px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition min-h-[36px]">
+          Ví ký quỹ &amp; Click Ledger
+        </button>
+        <button onclick="switchTab('verification')" id="tab-btn-verification" class="px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition min-h-[36px]">
+          Hợp đồng số &amp; Xác thực
+        </button>
+      </nav>
+
+      <!-- Right: Actions & User Info -->
+      <div id="auth-actions" class="flex items-center gap-2.5 text-xs">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Bottom Navigation Bar (Visible on mobile when logged in) -->
+  <nav id="mobile-nav-bar" class="hidden md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur border-hairline-t py-1 px-2 flex items-center justify-around shadow-2xl" aria-label="Mobile Navigation">
+    <button onclick="switchTab('dashboard')" id="mobile-tab-btn-dashboard" class="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-brand transition min-h-[44px] justify-center px-2" aria-label="Chuyển đến Tổng quan">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      <span>Tổng quan</span>
+    </button>
+    <button onclick="switchTab('products')" id="mobile-tab-btn-products" class="flex flex-col items-center gap-0.5 text-[10px] font-medium text-slate-400 hover:text-white transition min-h-[44px] justify-center px-2" aria-label="Chuyển đến Sản phẩm">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span>Sản phẩm CPC</span>
+    </button>
+    <button onclick="switchTab('reconciliation')" id="mobile-tab-btn-reconciliation" class="flex flex-col items-center gap-0.5 text-[10px] font-medium text-slate-400 hover:text-white transition min-h-[44px] justify-center px-2" aria-label="Chuyển đến Ví và Click Ledger">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Ví &amp; Clicks</span>
+    </button>
+    <button onclick="switchTab('verification')" id="mobile-tab-btn-verification" class="flex flex-col items-center gap-0.5 text-[10px] font-medium text-slate-400 hover:text-white transition min-h-[44px] justify-center px-2" aria-label="Chuyển đến Hợp đồng và Xác minh">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Hợp đồng số</span>
+    </button>
+  </nav>
+
+  <!-- Main View Workspace -->
+  <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-6 pb-20 md:pb-8" id="main-content">
+    <!-- Injected dynamically based on state -->
+  </main>
+
+  <!-- Minimal System Footer -->
+  <footer class="border-hairline-t bg-surface/50 py-4 mt-auto">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-mono">
+      <div class="flex items-center gap-3">
+        <span class="inline-block w-2 h-2 rounded-full bg-brand"></span>
+        <span>TAP AI Video Ingestion Engine: Online</span>
+      </div>
+      <div class="flex items-center gap-5">
+        <a href="http://localhost:8000/docs" target="_blank" rel="noopener" class="hover:text-slate-300 transition py-2 px-1 inline-flex items-center min-h-[36px]">Swagger API ↗</a>
+        <span>Endpoint: localhost:8000</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Auth Modal (Clean Enterprise Dialog) -->
+  <div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="modal-tab-login" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/70 backdrop-blur-[2px]">
+    <div class="bg-surface border-hairline rounded-xl max-w-[420px] w-full p-6 shadow-2xl relative">
+      <button onclick="closeAuthModal()" aria-label="Đóng cửa sổ đăng nhập" class="absolute top-4 right-4 text-slate-400 hover:text-white w-7 h-7 flex items-center justify-center rounded-md hover:bg-elevated transition">
+        ✕
+      </button>
+
+      <div class="flex gap-2 p-1 bg-panel rounded-lg mb-4 border border-border">
+        <button id="modal-tab-login" onclick="setAuthMode('login')" class="flex-1 py-1.5 rounded text-xs font-semibold bg-elevated text-white border border-border transition">
+          Đăng nhập
+        </button>
+        <button id="modal-tab-register" onclick="setAuthMode('register')" class="flex-1 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-white transition">
+          Tạo tài khoản gian hàng
+        </button>
+      </div>
+
+      <!-- Modal Inline Alert (Immediately visible inside dialog) -->
+      <div id="modal-alert" class="hidden mb-4 p-3 rounded-lg text-xs flex items-center gap-2 border"></div>
+
+      <!-- Login Form -->
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label for="login-email" class="block font-medium text-slate-300 mb-1.5">Email hoặc Số điện thoại</label>
+          <input type="text" id="login-email" name="login_email" required placeholder="contact@brand.vn hoặc 0988..." class="input-field" autocomplete="username">
+        </div>
+        <div>
+          <label for="login-pwd" class="block font-medium text-slate-300 mb-1.5">Mật khẩu</label>
+          <input type="password" id="login-pwd" name="login_pwd" required placeholder="••••••••" class="input-field" autocomplete="current-password">
+        </div>
+        <button type="submit" id="btn-submit-login" class="btn-solid-primary w-full justify-center py-2.5 mt-2 min-h-[40px]">
+          Đăng nhập vào Portal
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-3 text-xs hidden">
+        <div>
+          <label for="reg-shop-name" class="block font-medium text-slate-300 mb-1">Tên thương hiệu / Gian hàng (*)</label>
+          <input type="text" id="reg-shop-name" name="shop_name" required placeholder="VD: Ananas Vietnam" class="input-field" autocomplete="organization">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label for="reg-platform" class="block font-medium text-slate-300 mb-1">Nền tảng TMĐT</label>
+            <select id="reg-platform" name="platform" class="input-field">
+              <option value="shopee">Shopee</option>
+              <option value="tiktok_shop">TikTok Shop</option>
+              <option value="lazada">Lazada</option>
+              <option value="tiki">Tiki</option>
+            </select>
+          </div>
+          <div>
+            <label for="reg-phone" class="block font-medium text-slate-300 mb-1">Số điện thoại</label>
+            <input type="tel" id="reg-phone" name="phone" required placeholder="0988112233" class="input-field" autocomplete="tel">
+          </div>
+        </div>
+        <div>
+          <label for="reg-email" class="block font-medium text-slate-300 mb-1">Email doanh nghiệp</label>
+          <input type="email" id="reg-email" name="email" required placeholder="contact@brand.vn" class="input-field" autocomplete="email">
+        </div>
+        <div>
+          <label for="reg-shop-url" class="block font-medium text-slate-300 mb-1">Link gian hàng</label>
+          <input type="url" id="reg-shop-url" name="shop_url" required placeholder="https://shopee.vn/ananas.vn" class="input-field" autocomplete="url">
+        </div>
+        <div>
+          <label for="reg-pwd" class="block font-medium text-slate-300 mb-1">Mật khẩu (≥ 6 ký tự)</label>
+          <input type="password" id="reg-pwd" name="reg_password" required placeholder="••••••••" class="input-field" autocomplete="new-password">
+        </div>
+        <button type="submit" id="btn-submit-reg" class="btn-solid-primary w-full justify-center py-2.5 mt-2 min-h-[40px]">
+          Gửi mã OTP xác thực
+        </button>
+      </form>
+
+      <!-- OTP Form -->
+      <form id="form-otp" onsubmit="handleOtpSubmit(event)" class="space-y-4 text-xs hidden">
+        <label for="otp-input" class="block text-slate-300 text-center font-medium">Nhập mã OTP 6 chữ số vừa gửi đến email:</label>
+        <input type="text" id="otp-input" name="otp_code" maxlength="6" placeholder="000000" required aria-label="Mã OTP 6 chữ số" autocomplete="one-time-code" class="input-field text-center font-mono text-xl tracking-[0.5em] font-bold py-2.5">
+        <button type="submit" class="btn-solid-primary w-full justify-center py-2.5 min-h-[40px]">
+          Xác thực & Vào Bảng điều khiển
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CORE LOGIC JAVASCRIPT -->
+  <script>
+    const API_BASE = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:8000';
+    let currentShop = null;
+    let currentTab = 'dashboard';
+    let dailyChartInstance = null;
+    let pendingOtpEmail = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+    });
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const border = type === 'success' ? 'border-emerald-600 bg-surface text-slate-100' :
+                     type === 'error' ? 'border-rose-600 bg-surface text-slate-100' :
+                     'border-border-light bg-surface text-slate-100';
+      const indicator = type === 'success' ? '<span class="w-2 h-2 rounded-full bg-emerald-500"></span>' :
+                        type === 'error' ? '<span class="w-2 h-2 rounded-full bg-rose-500"></span>' :
+                        '<span class="w-2 h-2 rounded-full bg-blue-500"></span>';
+      toast.className = `pointer-events-auto border px-4 py-2.5 rounded-lg shadow-xl text-xs flex items-center gap-2.5 toast-anim ${border}`;
+      toast.innerHTML = `${indicator}<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 200ms ease';
+        setTimeout(() => toast.remove(), 200);
+      }, 3500);
+    }
+
+    // API Wrapper
+    async function apiRequest(endpoint, options = {}) {
+      const token = localStorage.getItem('tapai_token');
+      const headers = { ...(options.headers || {}) };
+      if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          let errMsg = `Lỗi HTTP ${res.status}`;
+          if (typeof errData.detail === 'string') {
+            errMsg = errData.detail;
+          } else if (Array.isArray(errData.detail)) {
+            errMsg = errData.detail.map(d => `${d.loc ? d.loc.slice(-1)[0] : 'Trường'}: ${d.msg.replace('Value error, ', '')}`).join(' | ');
+          }
+          throw new Error(errMsg);
+        }
+        return await res.json();
+      } catch (err) {
+        if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('Failed'))) {
+          throw new Error('Không thể kết nối đến máy chủ backend (http://localhost:8000). Vui lòng chạy lệnh: python run_portal.py');
+        }
+        throw err;
+      }
+    }
+
+    // Check login state
+    async function checkAuth() {
+      const token = localStorage.getItem('tapai_token');
+      if (!token) {
+        currentShop = null;
+        renderHeader();
+        renderMain();
+        return;
+      }
+      try {
+        currentShop = await apiRequest('/api/v1/auth/me');
+        renderHeader();
+        renderMain();
+      } catch (e) {
+        localStorage.removeItem('tapai_token');
+        currentShop = null;
+        renderHeader();
+        renderMain();
+      }
+    }
+
+    // Render Navigation & Context
+    function renderHeader() {
+      const navTabs = document.getElementById('nav-tabs');
+      const authActions = document.getElementById('auth-actions');
+      const headerContext = document.getElementById('header-context');
+      const mobileNavBar = document.getElementById('mobile-nav-bar');
+
+      if (currentShop) {
+        navTabs.classList.remove('hidden');
+        navTabs.classList.add('md:flex');
+        headerContext.classList.remove('hidden');
+        if (mobileNavBar) mobileNavBar.classList.remove('hidden');
+        
+        const isContractActive = currentShop.contract_status === 'ACTIVE';
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+
+        headerContext.innerHTML = `
+          <span class="font-semibold text-white">${currentShop.shop_name}</span>
+          <span>·</span>
+          <span class="uppercase font-mono text-[11px]">${currentShop.platform}</span>
+          <span>·</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${isContractActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+            HỢP ĐỒNG: ${currentShop.contract_status || 'PENDING'}
+          </span>
+        `;
+
+        authActions.innerHTML = `
+          <div class="hidden sm:flex items-center gap-1.5 bg-panel px-2.5 py-1 rounded-md border border-border font-mono text-xs text-slate-300">
+            <span class="text-slate-400 text-[11px]">Ví ký quỹ:</span>
+            <span class="text-emerald-400 font-bold tabular">${formatVND(currentShop.wallet_balance !== undefined ? currentShop.wallet_balance : 1000000)}</span>
+            <button onclick="switchTab('reconciliation')" class="ml-1 text-[11px] text-teal-400 hover:text-teal-300 underline font-sans font-semibold">
+              + Nạp
+            </button>
+          </div>
+          <div class="hidden lg:block text-right font-mono text-[11px] text-slate-400 mr-1">
+            ${currentShop.email}
+          </div>
+          <button onclick="handleLogout()" class="btn-subtle min-h-[36px]" aria-label="Đăng xuất khỏi tài khoản">
+            Đăng xuất
+          </button>
+        `;
+      } else {
+        navTabs.classList.add('hidden');
+        navTabs.classList.remove('md:flex');
+        headerContext.classList.add('hidden');
+        if (mobileNavBar) mobileNavBar.classList.add('hidden');
+        authActions.innerHTML = `
+          <button onclick="openAuthModal('login')" class="btn-ghost min-h-[36px]">
+            Đăng nhập
+          </button>
+          <button onclick="openAuthModal('register')" class="btn-solid-primary min-h-[36px]">
+            Đăng ký Gian hàng
+          </button>
+        `;
+      }
+    }
+
+    // Switch Tab
+    function switchTab(tab) {
+      currentTab = tab;
+      ['dashboard', 'products', 'reconciliation', 'verification'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) {
+          if (t === tab) {
+            btn.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold text-brand bg-elevated border border-border transition min-h-[36px]";
+          } else {
+            btn.className = "px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition min-h-[36px]";
+          }
+        }
+        const mBtn = document.getElementById(`mobile-tab-btn-${t}`);
+        if (mBtn) {
+          if (t === tab) {
+            mBtn.className = "flex flex-col items-center gap-0.5 text-[10px] font-semibold text-brand transition min-h-[44px] justify-center px-3";
+          } else {
+            mBtn.className = "flex flex-col items-center gap-0.5 text-[10px] font-medium text-slate-400 hover:text-white transition min-h-[44px] justify-center px-3";
+          }
+        }
+      });
+      renderMain();
+    }
+
+    // Render Main Area
+    function renderMain() {
+      const main = document.getElementById('main-content');
+      if (!currentShop) {
+        renderLandingView(main);
+        return;
+      }
+      if (currentTab === 'dashboard') renderDashboardView();
+      if (currentTab === 'products') renderProductsView();
+      if (currentTab === 'reconciliation') renderReconciliationView();
+      if (currentTab === 'verification') renderVerificationView();
+    }
+
+    // ==========================================
+    // 0. AUTHENTIC HIGH-DENSITY LANDING VIEW
+    // ==========================================
+    function renderLandingView(main) {
+      main.innerHTML = `
+        <div class="py-8 md:py-14">
+          
+          <!-- Split Layout: Left value proposition + interactive demo mockup, Right login panel -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left 7 cols: What TAP AI actually does -->
+            <div class="lg:col-span-7 space-y-6">
+              
+              <div>
+                <div class="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 mb-3 bg-brand-subtle px-2.5 py-1 rounded border border-emerald-900/40">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  AFFILIATE MERCHANT PROGRAM
+                </div>
+                <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-[1.2]">
+                  Biến người xem video thành khách mua hàng trực tiếp trên gian hàng chính hãng
+                </h1>
+                <p class="text-sm sm:text-base text-slate-400 mt-3 leading-relaxed max-w-2xl">
+                  TAP AI sử dụng thị giác máy tính nhận diện sản phẩm trong từng khung hình video clip (TikTok, YouTube, Facebook), tạo mã affiliate và điều hướng khách hàng tới sản phẩm của bạn trên Shopee &amp; TikTok Shop.
+                </p>
+              </div>
+
+              <!-- Live Interactive Simulation Card -->
+              <div class="bg-surface border-hairline rounded-xl overflow-hidden p-5 space-y-4">
+                <div class="flex items-center justify-between text-xs text-slate-400 border-hairline-b pb-3">
+                  <span class="font-semibold text-slate-200 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Mô phỏng trải nghiệm Shoppable Video
+                  </span>
+                  <span class="font-mono text-[11px] text-slate-400">Chrome Extension Active</span>
+                </div>
+
+                <div class="relative bg-panel rounded-lg border border-border p-4 flex flex-col sm:flex-row items-center gap-5">
+                  <div class="relative w-40 h-40 bg-slate-900 rounded-md overflow-hidden flex-shrink-0 border border-border">
+                    <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80" alt="Mô phỏng áo thun thời trang nhận diện bởi TAP AI" width="160" height="160" loading="lazy" class="w-full h-full object-cover">
+                    <!-- AI Bounding Box Tag -->
+                    <div class="absolute inset-2 border-2 border-dashed border-emerald-400/90 rounded pointer-events-none flex items-start justify-end p-1">
+                      <span class="bg-emerald-500 text-panel font-mono text-[9px] font-bold px-1 rounded">MATCH 98%</span>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2 text-xs flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono font-semibold">
+                        CHÍNH HÃNG [SHOPEE MALL]
+                      </span>
+                      <span class="text-slate-400 text-[11px]">Coolmate Official</span>
+                    </div>
+                    <h4 class="font-semibold text-white text-sm">Áo thun nam Cotton Compact Clean Vietnam</h4>
+                    <div class="flex items-baseline gap-3">
+                      <span class="text-base font-bold text-white font-mono">189.000 ₫</span>
+                      <span class="text-emerald-400 font-mono text-xs">+7.5% Extra Commission</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] leading-relaxed">
+                      Sản phẩm được đẩy lên Top 1 kết quả tìm kiếm khi khán giả nhấn "Mua trang phục này".
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 3 Concrete Guarantees (No cheesy cards) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                  <div class="p-3 bg-panel rounded border border-border">
+                    <div class="font-semibold text-slate-200 mb-1">01. Đối soát tự động</div>
+                    <p class="text-slate-400 text-[11px]">Đồng bộ đơn hàng và lượt nhấp qua webhook sàn TMĐT.</p>
+                  </div>
+                  <div class="p-3 bg-panel rounded border border-border">
+                    <div class="font-semibold text-slate-200 mb-1">02. Không phí duy trì</div>
+                    <p class="text-slate-400 text-[11px]">Chỉ chi trả hoa hồng affiliate khi phát sinh đơn hàng thành công.</p>
+                  </div>
+                  <div class="p-3 bg-panel rounded border border-border">
+                    <div class="font-semibold text-slate-200 mb-1">03. Ưu tiên thuật toán</div>
+                    <p class="text-slate-400 text-[11px]">Tự điều chỉnh Extra Commission % để tối ưu vị trí hiển thị.</p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Right 5 cols: Direct Merchant Sign-in Box -->
+            <div class="lg:col-span-5 bg-surface border-hairline rounded-xl p-6 shadow-xl space-y-5">
+              <div>
+                <h3 class="font-bold text-white text-base">Cổng kết nối Gian hàng</h3>
+                <p class="text-xs text-slate-400 mt-1">Đăng nhập tài khoản đối tác để quản lý sản phẩm &amp; hoa hồng</p>
+              </div>
+
+              <!-- Direct Form -->
+              <form onsubmit="handleDirectLogin(event)" class="space-y-4 text-xs">
+                <div>
+                  <label for="direct-email" class="block font-medium text-slate-300 mb-1.5">Email hoặc Số điện thoại</label>
+                  <input type="text" id="direct-email" name="email_or_phone" required placeholder="contact@brand.vn hoặc 0988..." class="input-field" autocomplete="username">
+                </div>
+                <div>
+                  <label for="direct-pwd" class="block font-medium text-slate-300 mb-1.5">Mật khẩu</label>
+                  <input type="password" id="direct-pwd" name="password" required placeholder="••••••••" class="input-field" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-solid-primary w-full justify-center py-2.5 min-h-[40px]">
+                  Đăng nhập Portal
+                </button>
+              </form>
+
+              <div class="pt-4 border-hairline-t flex items-center justify-between text-xs text-slate-400">
+                <span>Chưa có tài khoản gian hàng?</span>
+                <button onclick="openAuthModal('register')" class="text-brand hover:underline font-semibold">
+                  Đăng ký hợp tác ngay →
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    async function handleDirectLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('direct-email').value;
+      const pwd = document.getElementById('direct-pwd').value;
+      try {
+        const res = await apiRequest('/api/v1/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email_or_phone: email, password: pwd })
+        });
+        localStorage.setItem('tapai_token', res.access_token);
+        showToast('Đăng nhập thành công', 'success');
+        await checkAuth();
+      } catch (err) {
+        showToast(err.message || 'Sai thông tin đăng nhập', 'error');
+      }
+    }
+
+    // ==========================================
+    // 1. AUTHENTICATED DASHBOARD VIEW (DOCS.MD CPC & FEED MODEL)
+    // ==========================================
+    async function renderDashboardView() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="space-y-6">
+          <div class="h-28 skeleton"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+          </div>
+          <div class="h-72 skeleton"></div>
+        </div>
+      `;
+
+      try {
+        const [contractData, ledgerData, productsData, daily] = await Promise.all([
+          apiRequest('/api/v1/shops/contract').catch(() => ({ wallet_balance: 1000000, total_deposited: 1000000, total_cpc_spent: 0, contract_status: 'PENDING' })),
+          apiRequest('/api/v1/tracking/cpc-ledger?limit=10').catch(() => ({ total_clicks: 0, valid_clicks: 0, fraud_clicks: 0, total_cpc_spent: 0, clicks: [] })),
+          apiRequest('/api/v1/affiliate/products').catch(() => ({ total: 0, products: [] })),
+          apiRequest('/api/v1/reports/daily?days=7').catch(() => ({ dates: [], clicks: [], conversions: [] }))
+        ]);
+
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+        const isContractActive = contractData.contract_status === 'ACTIVE';
+        const walletBal = contractData.wallet_balance !== undefined ? contractData.wallet_balance : 1000000;
+        const totalProducts = (productsData.products || []).length;
+        const validClicks = ledgerData.valid_clicks || 0;
+        const fraudClicks = ledgerData.fraud_clicks || 0;
+        const totalCpcSpent = contractData.total_cpc_spent || 0;
+
+        // Cập nhật lại số dư ví trên header nếu cần
+        if (currentShop) {
+          currentShop.wallet_balance = walletBal;
+          currentShop.contract_status = contractData.contract_status;
+          renderHeader();
+        }
+
+        main.innerHTML = `
+          <div class="space-y-6">
+            
+            <!-- Operational Control Toolbar & 4-Stage Banner -->
+            <div class="bg-surface border-hairline p-5 rounded-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-hairline-b pb-4">
+                <div>
+                  <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>Hệ thống phân phối Direct CPC &amp; JSON Feed</span>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-panel border border-border text-slate-300">
+                      DOCS.md Standard
+                    </span>
+                  </h2>
+                  <p class="text-xs text-slate-400 mt-1">Quy trình 4 giai đoạn chuẩn: Hợp đồng số ──► Giá thầu CPC &amp; Ký quỹ ──► Xuất Feed ──► Gateway Anti-Fraud</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="renderDashboardView()" class="btn-subtle text-xs min-h-[36px]" aria-label="Làm mới báo cáo hiệu quả">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                    <span>Làm mới</span>
+                  </button>
+                  <button onclick="switchTab('products')" class="btn-solid-primary text-xs min-h-[36px]" aria-label="Chuyển sang Quản lý sản phẩm">
+                    <span>+ Đăng ký sản phẩm</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 4-Stage Workflow Progress Stepper -->
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div onclick="switchTab('verification')" class="cursor-pointer p-3 rounded-lg border transition ${isContractActive ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-panel border-border hover:border-slate-600'}">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="font-mono font-semibold ${isContractActive ? 'text-emerald-400' : 'text-slate-400'}">STAGE 1</span>
+                    <span class="font-bold ${isContractActive ? 'text-emerald-400' : 'text-amber-400'}">${isContractActive ? '✓ ACTIVE' : '○ PENDING'}</span>
+                  </div>
+                  <div class="font-semibold text-white text-xs">Hợp đồng điện tử OTP</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Xác thực Bio &amp; Ký số SHA-256</div>
+                </div>
+
+                <div onclick="switchTab('products')" class="cursor-pointer p-3 rounded-lg border transition ${totalProducts > 0 ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-panel border-border hover:border-slate-600'}">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="font-mono font-semibold ${totalProducts > 0 ? 'text-emerald-400' : 'text-slate-400'}">STAGE 2</span>
+                    <span class="font-bold text-emerald-400">${totalProducts} SP</span>
+                  </div>
+                  <div class="font-semibold text-white text-xs">Giá thầu CPC &amp; Ký quỹ</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Giá thầu 2.000 ₫ &amp; Hạn mức ngày</div>
+                </div>
+
+                <div onclick="switchTab('products')" class="cursor-pointer p-3 rounded-lg border bg-panel border-border hover:border-slate-600 transition">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="font-mono font-semibold text-emerald-400">STAGE 3</span>
+                    <span class="font-mono text-[10px] text-teal-400">SERIALIZER</span>
+                  </div>
+                  <div class="font-semibold text-white text-xs">JSON Data Feed Export</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Xuất merchant_products_feed.json</div>
+                </div>
+
+                <div onclick="switchTab('reconciliation')" class="cursor-pointer p-3 rounded-lg border bg-panel border-border hover:border-slate-600 transition">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="font-mono font-semibold text-emerald-400">STAGE 4</span>
+                    <span class="font-mono text-[10px] text-emerald-400">GATEWAY /r/</span>
+                  </div>
+                  <div class="font-semibold text-white text-xs">Click Tracking &amp; Anti-Fraud</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Chặn Bot, Trùng 30s &amp; Trừ ví</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financial Strip & Metric Counters -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              <!-- Metric 1: Escrow Wallet Balance -->
+              <div class="bg-surface border-hairline p-5 rounded-xl border-l-4 ${walletBal >= 2000 ? 'border-l-emerald-500' : 'border-l-rose-500'}">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-400 font-medium">Số dư Ví ký quỹ (Escrow)</span>
+                  <button onclick="switchTab('reconciliation')" class="text-[11px] text-teal-400 hover:underline font-semibold font-mono">+ Nạp quỹ</button>
+                </div>
+                <div class="text-2xl font-bold text-white font-mono mt-1 tabular">
+                  ${formatVND(walletBal)}
+                </div>
+                <div class="mt-2 text-[11px] ${walletBal >= 2000 ? 'text-emerald-400' : 'text-rose-400'} flex items-center gap-1">
+                  <span>${walletBal >= 2000 ? '● Khả dụng để chạy Traffic' : '▲ Cần nạp để duy trì feed'}</span>
+                </div>
+              </div>
+
+              <!-- Metric 2: Valid Unique Clicks -->
+              <div class="bg-surface border-hairline p-5 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Lượt Click Hợp lệ (Unique Clicks)</div>
+                <div class="text-2xl font-bold text-white font-mono mt-1 tabular">
+                  ${validClicks.toLocaleString()}
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400">
+                  Phí CPC cam kết: <span class="font-mono text-emerald-400 font-semibold">2.000 ₫/click</span>
+                </div>
+              </div>
+
+              <!-- Metric 3: Anti-Fraud Saved -->
+              <div class="bg-surface border-hairline p-5 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Click Ảo/Trùng bị chặn (Anti-Fraud)</div>
+                <div class="text-2xl font-bold text-amber-400 font-mono mt-1 tabular">
+                  ${fraudClicks.toLocaleString()}
+                </div>
+                <div class="mt-2 text-[11px] text-emerald-400">
+                  ✓ Tiết kiệm: <span class="font-mono font-semibold">${formatVND(fraudClicks * 2000)} (0 ₫)</span>
+                </div>
+              </div>
+
+              <!-- Metric 4: Total CPC Spent -->
+              <div class="bg-surface border-hairline p-5 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Ngân sách CPC đã tiêu thụ</div>
+                <div class="text-2xl font-bold text-emerald-400 font-mono mt-1 tabular">
+                  ${formatVND(totalCpcSpent)}
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400">
+                  Khấu trừ tự động thời gian thực
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Chart Panel -->
+            <div class="bg-surface border-hairline rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between border-hairline-b pb-3">
+                <div>
+                  <h3 class="font-semibold text-white text-xs">Biểu đồ Lượt nhấp &amp; Xu hướng phân phối Traffic</h3>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Lượt chuyển hướng qua Gateway /r/{product_id} theo ngày</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-mono">
+                  <span class="flex items-center gap-1.5 text-slate-300">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>
+                    Clicks hợp lệ
+                  </span>
+                  <span class="flex items-center gap-1.5 text-slate-300">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+                    Chuyển đổi đơn
+                  </span>
+                </div>
+              </div>
+              <div class="h-64 w-full">
+                <canvas id="dailyAnalyticsChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Recent Click Ledger Quickview -->
+            <div class="bg-surface border-hairline rounded-xl overflow-hidden">
+              <div class="px-5 py-3.5 border-hairline-b flex items-center justify-between">
+                <div>
+                  <h3 class="font-semibold text-white text-xs uppercase tracking-wider font-mono">
+                    Lượt Click Đối soát Mới nhất (Recent Click Ledger)
+                  </h3>
+                  <p class="text-[11px] text-slate-400">Bộ lọc Anti-Fraud xác thực IP Rate Limit, Bot User-Agent và Duplicate Click Window (30s)</p>
+                </div>
+                <button onclick="switchTab('reconciliation')" class="btn-subtle text-xs py-1 px-2.5">
+                  Xem tất cả Ledger →
+                </button>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-panel border-hairline-b text-slate-400 font-mono text-[11px]">
+                      <th class="py-2.5 px-4 font-medium">Thời gian</th>
+                      <th class="py-2.5 px-4 font-medium">Sản phẩm</th>
+                      <th class="py-2.5 px-4 font-medium">User ID (ext_uid)</th>
+                      <th class="py-2.5 px-4 font-medium">IP Ẩn danh</th>
+                      <th class="py-2.5 px-4 font-medium text-center">Anti-Fraud Filter</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Giá thầu CPC</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Phí trừ ví</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    ${(ledgerData.clicks || []).length === 0 ? `
+                      <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-500">
+                          Chưa có lượt click nào. Bạn có thể sang tab <strong>"Ví ký quỹ &amp; Click Ledger"</strong> để chạy thử nghiệm Gateway!
+                        </td>
+                      </tr>
+                    ` : (ledgerData.clicks || []).slice(0, 5).map(c => `
+                      <tr class="hover:bg-elevated/60 transition">
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.clicked_at ? c.clicked_at.slice(11, 19) : '--:--:--'}</td>
+                        <td class="py-2.5 px-4 font-medium text-slate-200 max-w-[200px] truncate">${c.product_title}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.ext_uid}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.ip_anonymized}</td>
+                        <td class="py-2.5 px-4 text-center">
+                          ${c.is_valid_unique ? `
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                              ✓ VALID UNIQUE
+                            </span>
+                          ` : `
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-950/80 text-amber-400 border border-amber-800/60">
+                              ⚠️ ${c.fraud_reason || 'BLOCKED'}
+                            </span>
+                          `}
+                        </td>
+                        <td class="py-2.5 px-4 text-right font-mono text-slate-300 tabular">${formatVND(c.committed_cpc)}</td>
+                        <td class="py-2.5 px-4 text-right font-mono font-bold tabular ${c.cpc_deducted > 0 ? 'text-emerald-400' : 'text-slate-500'}">
+                          ${c.cpc_deducted > 0 ? formatVND(c.cpc_deducted) : '0 ₫'}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        `;
+
+        // Render Chart.js
+        setTimeout(() => {
+          const ctx = document.getElementById('dailyAnalyticsChart');
+          if (ctx) {
+            if (dailyChartInstance) dailyChartInstance.destroy();
+            const metrics = daily.daily_metrics || [];
+            const dates = daily.dates && daily.dates.length > 0
+              ? daily.dates.map(d => d.slice(5))
+              : (metrics.length > 0 ? metrics.map(m => (m.date || '').slice(5)) : ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']);
+            const clicks = daily.clicks && daily.clicks.length > 0
+              ? daily.clicks
+              : (metrics.length > 0 ? metrics.map(m => m.clicks) : [0, 0, 0, 0, 0, 0, 0]);
+            const convs = daily.conversions && daily.conversions.length > 0
+              ? daily.conversions
+              : (metrics.length > 0 ? metrics.map(m => m.conversions) : [0, 0, 0, 0, 0, 0, 0]);
+
+            dailyChartInstance = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: dates,
+                datasets: [
+                  {
+                    label: 'Clicks hợp lệ',
+                    data: clicks,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    tension: 0.25,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#10B981',
+                    fill: true
+                  },
+                  {
+                    label: 'Đơn hàng',
+                    data: convs,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.04)',
+                    tension: 0.25,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#3B82F6',
+                    fill: true
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: '#171B26',
+                    titleColor: '#F8FAFC',
+                    bodyColor: '#CBD5E1',
+                    borderColor: '#2D354D',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 6,
+                    titleFont: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                    bodyFont: { family: 'JetBrains Mono', size: 11 }
+                  }
+                },
+                scales: {
+                  x: {
+                    grid: { color: '#1A2133', drawBorder: false },
+                    ticks: { color: '#64748B', font: { family: 'JetBrains Mono', size: 11 } }
+                  },
+                  y: {
+                    grid: { color: '#1A2133', drawBorder: false },
+                    ticks: { color: '#64748B', font: { family: 'JetBrains Mono', size: 11 } }
+                  }
+                }
+              }
+            });
+          }
+        }, 80);
+
+      } catch (err) {
+        main.innerHTML = `
+          <div class="p-6 bg-surface border-hairline rounded-xl text-center space-y-3">
+            <p class="text-rose-400 text-xs font-mono">${err.message}</p>
+            <button onclick="renderDashboardView()" class="btn-subtle">Thử tải lại</button>
+          </div>
+        `;
+      }
+    }
+
+    // ==========================================
+    // 2. STAGE 2 & STAGE 3: PRODUCTS, CPC BIDDING & JSON FEED EXPORT
+    // ==========================================
+    async function renderProductsView() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `<div class="h-64 skeleton"></div>`;
+
+      try {
+        const res = await apiRequest('/api/v1/affiliate/products');
+        const products = res.products || [];
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+
+        main.innerHTML = `
+          <div class="space-y-6">
+            
+            <!-- Toolbar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface border-hairline p-4 rounded-xl">
+              <div>
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                  <span>Sản phẩm &amp; Đấu thầu CPC</span>
+                  <span class="font-mono text-xs text-slate-400">(${products.length})</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">Stage 2: Đăng ký sản phẩm, cam kết giá thầu CPC &amp; kiểm tra hạn mức ví ký quỹ</p>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="downloadMerchantFeedJson()" class="btn-subtle text-xs flex items-center gap-1.5 min-h-[36px]" title="Xuất merchant_products_feed.json" aria-label="Tải JSON Feed">
+                  <span>📥 Tải Feed JSON</span>
+                </button>
+                <button onclick="dispatchMerchantFeed()" class="btn-subtle text-xs flex items-center gap-1.5 min-h-[36px] text-teal-400 hover:text-white" title="Dispatch sang Core Ranking Backend" aria-label="Dispatch Feed">
+                  <span>🚀 Dispatch Feed</span>
+                </button>
+                <button onclick="toggleAddProductForm()" class="btn-solid-primary text-xs flex items-center gap-1.5 min-h-[36px]" aria-label="Mở khung đăng ký sản phẩm">
+                  <span>+ Đăng ký sản phẩm &amp; Bidding</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 1-Click Import & CPC Bidding Form (Stage 2) -->
+            <div id="add-product-container" class="hidden bg-surface border border-emerald-900/50 rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between border-hairline-b pb-3">
+                <div>
+                  <h3 class="font-semibold text-xs text-white">STAGE 2: Đăng ký sản phẩm &amp; Thiết lập Giá thầu CPC cam kết</h3>
+                  <p class="text-[11px] text-slate-400">Dán link sản phẩm sàn TMĐT, hệ thống tự động bóc tách dữ liệu và kích hoạt trạng thái ELIGIBLE khi Hợp đồng ACTIVE.</p>
+                </div>
+                <span class="text-slate-400 font-mono text-[11px]">Sàn: ${currentShop.platform.toUpperCase()}</span>
+              </div>
+
+              <form onsubmit="handleImportProductUrl(event)" class="space-y-4">
+                <div>
+                  <label for="import-prod-url" class="block font-medium text-slate-300 mb-1.5 text-xs">Đường dẫn sản phẩm trên Sàn TMĐT (*)</label>
+                  <input 
+                    type="url" 
+                    id="import-prod-url" 
+                    name="product_url"
+                    required 
+                    placeholder="VD: https://shopee.vn/product/123/456 hoặc https://vt.tiktok.com/..." 
+                    class="input-field w-full text-xs font-mono"
+                  >
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label for="import-cpc-bid" class="block font-medium text-slate-300 mb-1 text-xs">
+                      Giá thầu CPC cam kết (Committed CPC Bid) (*)
+                    </label>
+                    <div class="relative">
+                      <input 
+                        type="number" 
+                        id="import-cpc-bid" 
+                        name="cpc_bid"
+                        min="500" 
+                        step="100" 
+                        value="2000" 
+                        required 
+                        class="input-field w-full text-xs font-mono pr-12"
+                      >
+                      <span class="absolute right-3 top-2.5 text-xs text-slate-500 font-mono">VNĐ</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Chi phí chi trả cho mỗi lượt click hợp lệ duy nhất (mặc định 2.000 ₫)</span>
+                  </div>
+
+                  <div>
+                    <label for="import-daily-budget" class="block font-medium text-slate-300 mb-1 text-xs">
+                      Ngân sách ngày tối đa (Daily Budget Cap) (*)
+                    </label>
+                    <div class="relative">
+                      <input 
+                        type="number" 
+                        id="import-daily-budget" 
+                        name="daily_budget"
+                        min="10000" 
+                        step="10000" 
+                        value="100000" 
+                        required 
+                        class="input-field w-full text-xs font-mono pr-12"
+                      >
+                      <span class="absolute right-3 top-2.5 text-xs text-slate-500 font-mono">VNĐ</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Hạn mức ngân sách tối đa tiêu thụ trong 1 ngày (mặc định 100.000 ₫)</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                  <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                    <span class="text-emerald-400 font-bold">●</span>
+                    Điều kiện xuất feed: <code>Contract == ACTIVE</code> &amp; <code>Ví ký quỹ &gt; 2.000 ₫</code>
+                  </div>
+                  <button type="submit" id="btn-import-submit" class="btn-solid-primary text-xs whitespace-nowrap min-h-[36px]">
+                    <span>⚡ Quét &amp; Kích hoạt sản phẩm</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Product Table -->
+            <div class="bg-surface border-hairline rounded-xl overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-panel border-hairline-b text-slate-400 font-mono text-[11px]">
+                      <th class="py-2.5 px-4 font-medium w-16">Hình ảnh</th>
+                      <th class="py-2.5 px-4 font-medium">Tên sản phẩm &amp; ID</th>
+                      <th class="py-2.5 px-4 font-medium">Sàn</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Giá niêm yết</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Giá thầu CPC</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Ngân sách ngày</th>
+                      <th class="py-2.5 px-4 font-medium text-center">Trạng thái Feed</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    ${products.length === 0 ? `
+                      <tr>
+                        <td colspan="8" class="py-8 text-center text-slate-500">
+                          Chưa có sản phẩm nào. Hãy bấm <strong>"+ Đăng ký sản phẩm &amp; Bidding"</strong> để thêm sản phẩm đầu tiên!
+                        </td>
+                      </tr>
+                    ` : products.map(p => {
+                      let img = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80';
+                      try {
+                        const arr = JSON.parse(p.image_urls);
+                        if (Array.isArray(arr) && arr.length > 0) img = arr[0];
+                      } catch(e) {
+                        if (p.image_url) img = p.image_url;
+                      }
+
+                      const cpcBid = Number(p.cpc_bid || 2000);
+                      const dailyBudget = Number(p.daily_budget || 100000);
+                      const statusVal = p.sync_status || p.status || 'ELIGIBLE';
+                      const isEligible = statusVal === 'ELIGIBLE' || statusVal === 'ACTIVE' || statusVal === 'active';
+                      const isNoBudget = statusVal === 'PAUSED_NO_BUDGET';
+
+                      return `
+                        <tr class="hover:bg-elevated/60 transition">
+                          <td class="py-2.5 px-4">
+                            <img src="${img}" alt="${p.name || p.title || 'Ảnh sản phẩm'}" width="40" height="40" loading="lazy" class="w-10 h-10 object-cover rounded bg-panel border border-border">
+                          </td>
+                          <td class="py-2.5 px-4 font-medium text-slate-200 max-w-xs">
+                            <a href="${p.product_url || p.original_url}" target="_blank" class="hover:text-emerald-400 transition line-clamp-1">
+                              ${p.name || p.title}
+                            </a>
+                            <div class="text-[10px] font-mono text-slate-500 truncate mt-0.5">
+                              ID: ${p.platform_item_id || p.id.slice(0, 8)}
+                            </div>
+                          </td>
+                          <td class="py-2.5 px-4 text-slate-400">
+                            <span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-mono bg-panel border border-border text-slate-400 uppercase">
+                              ${p.platform || currentShop.platform}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-4 text-right font-mono text-white font-semibold tabular">${formatVND(p.price || p.current_price || 0)}</td>
+                          <td class="py-2.5 px-4 text-right font-mono text-emerald-400 font-bold tabular">
+                            ${formatVND(cpcBid)}
+                          </td>
+                          <td class="py-2.5 px-4 text-right font-mono text-slate-300 tabular">
+                            ${formatVND(dailyBudget)}
+                          </td>
+                          <td class="py-2.5 px-4 text-center">
+                            ${isEligible ? `
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                                ● ELIGIBLE
+                              </span>
+                            ` : isNoBudget ? `
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-950 text-rose-400 border border-rose-800">
+                                ▲ HẾT KÝ QUỸ
+                              </span>
+                            ` : `
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-panel border border-border">
+                                ○ TẠM DỪNG
+                              </span>
+                            `}
+                          </td>
+                          <td class="py-2.5 px-4 text-right">
+                            <div class="inline-flex items-center gap-1">
+                              <button onclick="testProductGatewayLink('${p.id}')" class="btn-subtle py-1.5 px-2 text-[11px] text-teal-400 hover:text-teal-300 min-h-[30px]" title="Thử nghiệm link chuyển hướng Gateway (/r/...)" aria-label="Thử link Gateway ${p.name || p.id}">
+                                🔗 Test /r/
+                              </button>
+                              <button onclick="promptEditBidding('${p.id}', ${cpcBid}, ${dailyBudget})" class="btn-subtle py-1.5 px-2 text-[11px] text-amber-400 hover:text-amber-300 min-h-[30px]" title="Cập nhật giá thầu CPC" aria-label="Sửa giá thầu ${p.name || p.id}">
+                                ✏️ Bidding
+                              </button>
+                              <button onclick="handleDeleteProduct('${p.id}')" class="btn-danger-ghost py-1.5 px-2 text-[11px] min-h-[30px]" aria-label="Xóa sản phẩm ${p.name || p.id}">
+                                ✕
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Stage 3: JSON Data Feed Export for Core Backend Card -->
+            <div class="bg-surface border border-emerald-900/50 rounded-xl p-5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-hairline-b pb-3">
+                <div>
+                  <div class="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-brand-subtle px-2 py-0.5 rounded border border-emerald-900/40 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    STAGE 3: SERIALIZER &amp; FEED EXPORT
+                  </div>
+                  <h3 class="font-bold text-white text-sm">JSON Data Feed Export cho Core Ranking Backend</h3>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Serializer Job lọc các sản phẩm: <code>Contract == ACTIVE</code>, <code>Wallet_Balance &gt; Min_CPC (2.000 ₫)</code>, và <code>Status == ELIGIBLE</code>.
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="downloadMerchantFeedJson()" class="btn-solid-primary text-xs flex items-center gap-1.5 min-h-[36px]" aria-label="Tải file merchant_products_feed.json">
+                    <span>📥 Tải merchant_products_feed.json</span>
+                  </button>
+                  <button onclick="dispatchMerchantFeed()" class="btn-subtle text-xs flex items-center gap-1.5 min-h-[36px] text-emerald-400 hover:text-white" aria-label="Dispatch sang Core Backend">
+                    <span>🚀 Dispatch Feed sang Core Backend</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-3.5 bg-panel border border-border rounded-lg text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-300 font-semibold font-mono text-[11px]">Cấu trúc dữ liệu Feed chuẩn hóa (Payload Preview):</span>
+                  <button onclick="toggleFeedPreview()" id="btn-toggle-feed-preview" class="text-teal-400 text-[11px] hover:underline font-mono">
+                    ▼ Xem dữ liệu JSON
+                  </button>
+                </div>
+                <div id="feed-preview-box" class="hidden">
+                  <pre id="feed-preview-code" class="bg-black/60 p-3 rounded text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 border border-border">Đang nạp dữ liệu...</pre>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } catch (err) {
+        main.innerHTML = `<div class="p-6 bg-surface border-hairline rounded-xl text-xs text-rose-400">${err.message}</div>`;
+      }
+    }
+
+    function toggleAddProductForm() {
+      const el = document.getElementById('add-product-container');
+      el.classList.toggle('hidden');
+    }
+
+    async function toggleFeedPreview() {
+      const box = document.getElementById('feed-preview-box');
+      const code = document.getElementById('feed-preview-code');
+      const btn = document.getElementById('btn-toggle-feed-preview');
+      if (box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        btn.textContent = '▲ Ẩn dữ liệu JSON';
+        try {
+          const feed = await apiRequest('/api/v1/affiliate/products/feed/merchant-products');
+          code.textContent = JSON.stringify(feed, null, 2);
+        } catch (e) {
+          code.textContent = 'Lỗi nạp preview feed: ' + e.message;
+        }
+      } else {
+        box.classList.add('hidden');
+        btn.textContent = '▼ Xem dữ liệu JSON';
+      }
+    }
+
+    async function downloadMerchantFeedJson() {
+      try {
+        const token = localStorage.getItem('tapai_token');
+        const res = await fetch('/api/v1/affiliate/products/feed/merchant-products?download=true', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error('Không thể tải file JSON feed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'merchant_products_feed.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Đã tải thành công file merchant_products_feed.json', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi tải feed JSON', 'error');
+      }
+    }
+
+    async function dispatchMerchantFeed() {
+      try {
+        const res = await apiRequest('/api/v1/affiliate/products/feed/dispatch', { method: 'POST' });
+        showToast(res.message || 'Đã dispatch feed thành công sang Core Ranking Backend', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi dispatch feed', 'error');
+      }
+    }
+
+    async function promptEditBidding(productId, curBid, curBudget) {
+      const newBidStr = prompt("Nhập Giá thầu CPC cam kết mới (VNĐ/click):", curBid || 2000);
+      if (newBidStr === null) return;
+      const newBid = parseFloat(newBidStr);
+      if (isNaN(newBid) || newBid < 500) {
+        showToast("Giá thầu tối thiểu 500 VNĐ", "error");
+        return;
+      }
+
+      const newBudgetStr = prompt("Nhập Ngân sách ngày tối đa (VNĐ):", curBudget || 100000);
+      if (newBudgetStr === null) return;
+      const newBudget = parseFloat(newBudgetStr);
+      if (isNaN(newBudget) || newBudget < 10000) {
+        showToast("Ngân sách ngày tối thiểu 10.000 VNĐ", "error");
+        return;
+      }
+
+      try {
+        await apiRequest(`/api/v1/affiliate/products/${productId}/bidding`, {
+          method: 'PATCH',
+          body: JSON.stringify({ cpc_bid: newBid, daily_budget: newBudget })
+        });
+        showToast("Đã cập nhật giá thầu CPC và ngân sách ngày thành công!", "success");
+        renderProductsView();
+      } catch (err) {
+        showToast(err.message || "Lỗi cập nhật giá thầu", "error");
+      }
+    }
+
+    function testProductGatewayLink(productId) {
+      const link = `${window.location.origin}/r/${productId}?ext_uid=guest_${Date.now().toString().slice(-4)}`;
+      navigator.clipboard.writeText(link).then(() => {
+        showToast(`Đã sao chép link Gateway: ${link}`, 'success');
+      }).catch(() => {
+        prompt("Đường link Redirect Gateway:", link);
+      });
+    }
+
+    function triggerDownloadJson(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadProductJsonStandalone(p) {
+      const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+      const comm = p.commission || (p.commissions && p.commissions.length > 0 ? p.commissions[0] : null);
+      const platRate = comm ? Number(comm.platform_rate || 0) : 0;
+      const extraRate = comm ? Number(comm.extra_rate || 0) : 0;
+      const totalRate = comm ? Number(comm.total_rate || (platRate + extraRate)) : (platRate + extraRate);
+      const commType = comm ? (comm.commission_type || 'percentage') : 'percentage';
+      const extraFixed = comm ? Number(comm.extra_fixed_amount || 0) : 0;
+
+      const priceVal = Number(p.price || 0);
+      const estCommission = commType === 'fixed_amount' && extraFixed > 0
+        ? extraFixed
+        : Math.round(priceVal * (totalRate / 100));
+
+      let images = [];
+      if (Array.isArray(p.image_urls)) {
+        images = p.image_urls;
+      } else if (typeof p.image_urls === 'string') {
+        try { images = JSON.parse(p.image_urls); } catch(e) { images = [p.image_urls]; }
+      }
+
+      const exportData = {
+        order_item_name: p.name,
+        product_name: p.name,
+        category: p.category,
+        platform: p.platform,
+        product_id: p.id,
+        shop_id: p.shop_id,
+        shop_name: p.shop_name || (currentShop ? currentShop.shop_name : ''),
+        pricing: {
+          price: priceVal,
+          currency: p.currency || 'VND',
+          price_formatted: formatVND(priceVal)
+        },
+        commission_rate: {
+          commission_type: commType,
+          total_rate_percent: totalRate,
+          platform_rate_percent: platRate,
+          extra_rate_percent: extraRate,
+          extra_fixed_amount: extraFixed,
+          estimated_commission_per_order: estCommission,
+          estimated_commission_formatted: formatVND(estCommission)
+        },
+        product_url: p.product_url,
+        thumbnail_url: p.thumbnail_url || (images.length > 0 ? images[0] : ''),
+        image_urls: images,
+        description: p.description || '',
+        status: p.status,
+        registered_at: p.created_at || new Date().toISOString(),
+        export_metadata: {
+          exported_at: new Date().toISOString(),
+          generator: 'TAP AI Partner Engine',
+          schema_version: '1.0.0',
+          export_filename: `product_${p.id}.json`
+        }
+      };
+
+      triggerDownloadJson(exportData, `product_${p.id}.json`);
+    }
+
+    async function downloadProductJsonStandaloneById(id) {
+      try {
+        const token = localStorage.getItem('tapai_token');
+        const res = await fetch(`/api/v1/affiliate/products/${id}/export-json?download=true`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error('Không thể tải file JSON');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `product_${id}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Đã tải xuống file JSON sản phẩm', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi tải JSON', 'error');
+      }
+    }
+
+    async function downloadAllProductsJsonStandalone() {
+      try {
+        const token = localStorage.getItem('tapai_token');
+        const res = await fetch('/api/v1/affiliate/products/export/all-json?download=true', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error('Không thể tải file JSON tổng hợp');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `all_products_${currentShop ? currentShop.id.slice(0, 8) : 'export'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Đã tải xuống toàn bộ sản phẩm dạng JSON', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi xuất toàn bộ JSON', 'error');
+      }
+    }
+
+    async function handleImportProductUrl(e) {
+      e.preventDefault();
+      const inputEl = document.getElementById('import-prod-url');
+      const submitBtn = document.getElementById('btn-import-submit');
+      const url = inputEl.value.trim();
+      if (!url) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>⏳ Đang quét sàn...</span>`;
+
+      try {
+        const res = await apiRequest('/api/v1/affiliate/products/import-url', {
+          method: 'POST',
+          body: JSON.stringify({ product_url: url })
+        });
+
+        // Tự động tải xuống file JSON sản phẩm
+        downloadProductJsonStandalone({
+          id: res.id,
+          name: res.title,
+          category: 'Thời trang',
+          product_url: res.original_url,
+          platform: res.platform,
+          price: res.current_price,
+          commission: {
+            platform_rate: res.platform_base_rate,
+            extra_rate: res.seller_extra_rate,
+            total_rate: res.total_commission_rate
+          }
+        });
+
+        showToast(`Đã đồng bộ sản phẩm thành công! Hoa hồng sàn: ${res.total_commission_rate}%`, 'success');
+        toggleAddProductForm();
+        renderProductsView();
+      } catch (err) {
+        showToast(err.message || 'Lỗi quét sản phẩm từ sàn', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>⚡ Quét & Đăng ký ngay</span>`;
+      }
+    }
+
+    async function handleSyncProductNow(productId) {
+      try {
+        const res = await apiRequest(`/api/v1/affiliate/products/${productId}/sync`, {
+          method: 'POST'
+        });
+        showToast(`Đã làm mới hoa hồng sàn: ${res.total_commission_rate}% (Trạng thái: ${res.sync_status})`, 'success');
+        renderProductsView();
+      } catch (err) {
+        showToast(err.message || 'Lỗi đồng bộ lại hoa hồng', 'error');
+      }
+    }
+
+    async function handleCreateProduct(e) {
+      return handleImportProductUrl(e);
+    }
+
+    // ==========================================
+    // 3. STAGE 2 & STAGE 4: PREPAID ESCROW WALLET & REAL-TIME CLICK LEDGER
+    // ==========================================
+    async function renderReconciliationView() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `<div class="h-64 skeleton"></div>`;
+
+      try {
+        const [walletRes, ledgerRes, productsRes] = await Promise.all([
+          apiRequest('/api/v1/shops/wallet').catch(() => ({ wallet_balance: 1000000, total_deposited: 1000000, total_cpc_spent: 0, min_cpc: 2000 })),
+          apiRequest('/api/v1/tracking/cpc-ledger?limit=50').catch(() => ({ total_clicks: 0, valid_clicks: 0, fraud_clicks: 0, total_cpc_spent: 0, clicks: [] })),
+          apiRequest('/api/v1/affiliate/products').catch(() => ({ total: 0, products: [] }))
+        ]);
+
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+        const products = productsRes.products || [];
+        const clicks = ledgerRes.clicks || [];
+
+        if (currentShop) {
+          currentShop.wallet_balance = walletRes.wallet_balance;
+          renderHeader();
+        }
+
+        main.innerHTML = `
+          <div class="space-y-6">
+            
+            <!-- Header Toolbar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface border-hairline p-4 rounded-xl">
+              <div>
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                  <span>Ví ký quỹ &amp; Bảng kê Click Ledger</span>
+                  <span class="font-mono text-xs text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded border border-emerald-800/60">Stage 2 &amp; 4</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">Khấu trừ CPC tự động thời gian thực từ ví ký quỹ khi người dùng phát sinh click hợp lệ.</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button onclick="renderReconciliationView()" class="btn-subtle text-xs flex items-center gap-1.5 min-h-[36px]" aria-label="Làm mới bảng kê đối soát">
+                  <span>🔄 Làm mới Ledger</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Financial Wallet KPI Strip -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-surface border-hairline p-4 rounded-xl border-l-4 ${walletRes.wallet_balance >= 2000 ? 'border-l-emerald-500' : 'border-l-rose-500'}">
+                <div class="text-xs text-slate-400 font-medium">Số dư Ví ký quỹ (Escrow)</div>
+                <div class="text-2xl font-bold text-white font-mono mt-1 tabular">
+                  ${formatVND(walletRes.wallet_balance)}
+                </div>
+                <div class="mt-2 text-[11px] ${walletRes.wallet_balance >= 2000 ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${walletRes.wallet_balance >= 2000 ? '● Trạng thái: An toàn' : '▲ Trạng thái: Cần nạp duy trì feed'}
+                </div>
+              </div>
+
+              <div class="bg-surface border-hairline p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Lượt Click Hợp lệ (Unique)</div>
+                <div class="text-2xl font-bold text-white font-mono mt-1 tabular">
+                  ${ledgerRes.valid_clicks.toLocaleString()} <span class="text-xs text-slate-500 font-normal">clicks</span>
+                </div>
+                <div class="mt-2 text-[11px] text-emerald-400">
+                  Tính phí CPC snapshot: 2.000 ₫
+                </div>
+              </div>
+
+              <div class="bg-surface border-hairline p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Click Ảo / Trùng bị chặn</div>
+                <div class="text-2xl font-bold text-amber-400 font-mono mt-1 tabular">
+                  ${ledgerRes.fraud_clicks.toLocaleString()} <span class="text-xs text-slate-500 font-normal">clicks</span>
+                </div>
+                <div class="mt-2 text-[11px] text-emerald-400">
+                  ✓ Tiết kiệm: ${formatVND(ledgerRes.fraud_clicks * 2000)} (0 ₫)
+                </div>
+              </div>
+
+              <div class="bg-surface border-hairline p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Tổng CPC đã thanh toán</div>
+                <div class="text-2xl font-bold text-emerald-400 font-mono mt-1 tabular">
+                  ${formatVND(walletRes.total_cpc_spent)}
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400">
+                  Tổng nạp: ${formatVND(walletRes.total_deposited)}
+                </div>
+              </div>
+            </div>
+
+            <!-- Top-Up Escrow Wallet Card (Stage 2) -->
+            <div class="bg-surface border border-emerald-900/50 rounded-xl p-5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-hairline-b pb-3">
+                <div>
+                  <h3 class="font-semibold text-xs text-white">STAGE 2: Nạp tiền vào Ví ký quỹ trả trước (Prepaid Escrow Wallet)</h3>
+                  <p class="text-[11px] text-slate-400">Số dư ví tối thiểu 2.000 ₫ để giữ sản phẩm ở trạng thái ELIGIBLE. Khi nạp tiền, sản phẩm bị ngắt sẽ tự động kích hoạt lại.</p>
+                </div>
+                <span class="text-emerald-400 font-mono text-xs font-semibold">Tối thiểu: 2.000 ₫/click</span>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="handleQuickDeposit(200000)" class="btn-subtle text-xs py-1.5 px-3 min-h-[36px]">+200.000 ₫</button>
+                  <button onclick="handleQuickDeposit(500000)" class="btn-subtle text-xs py-1.5 px-3 min-h-[36px]">+500.000 ₫</button>
+                  <button onclick="handleQuickDeposit(1000000)" class="btn-subtle text-xs py-1.5 px-3 min-h-[36px] text-emerald-400 border-emerald-800/60">+1.000.000 ₫ (Khuyên dùng)</button>
+                  <button onclick="handleQuickDeposit(2000000)" class="btn-subtle text-xs py-1.5 px-3 min-h-[36px]">+2.000.000 ₫</button>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                  <div class="relative flex-1">
+                    <input 
+                      type="number" 
+                      id="custom-deposit-amount" 
+                      placeholder="Nhập số tiền nạp tùy chọn (VD: 500000)" 
+                      min="50000" 
+                      step="10000" 
+                      class="input-field w-full text-xs font-mono pr-12"
+                    >
+                    <span class="absolute right-3 top-2.5 text-xs text-slate-500 font-mono">VNĐ</span>
+                  </div>
+                  <button onclick="handleCustomDeposit()" class="btn-solid-primary text-xs whitespace-nowrap min-h-[36px]">
+                    <span>💳 Nạp tiền vào ví ký quỹ</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage 4 Interactive Simulator Card -->
+            <div class="bg-surface border-hairline rounded-xl p-5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-hairline-b pb-3">
+                <div>
+                  <div class="inline-flex items-center gap-1.5 text-xs font-mono text-teal-400 bg-brand-subtle px-2 py-0.5 rounded border border-teal-900/40 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                    STAGE 4: ANTI-FRAUD SIMULATOR
+                  </div>
+                  <h3 class="font-semibold text-xs text-white">Mô phỏng Kiểm thử Gateway /r/{product_id} &amp; Bộ lọc Anti-Fraud</h3>
+                  <p class="text-[11px] text-slate-400">Thử nghiệm trực tiếp kiểm tra 3 luồng: Click hợp lệ (trừ ví), Click trùng 30s (0 ₫), và Click bot (0 ₫).</p>
+                </div>
+              </div>
+
+              ${products.length === 0 ? `
+                <div class="p-4 bg-panel border border-border rounded-lg text-xs text-slate-400">
+                  Bạn cần có ít nhất 1 sản phẩm để chạy thử nghiệm Gateway. Hãy sang tab <strong>"Sản phẩm &amp; Đấu thầu CPC"</strong> để thêm sản phẩm!
+                </div>
+              ` : `
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                  <div class="sm:col-span-5">
+                    <label class="block text-[11px] text-slate-400 mb-1">Chọn sản phẩm thử nghiệm:</label>
+                    <select id="sim-product-id" class="input-field w-full text-xs">
+                      ${products.map(p => `
+                        <option value="${p.id}">${p.name || p.title} (${p.platform || currentShop.platform})</option>
+                      `).join('')}
+                    </select>
+                  </div>
+                  <div class="sm:col-span-3">
+                    <label class="block text-[11px] text-slate-400 mb-1">Extension User ID:</label>
+                    <input type="text" id="sim-ext-uid" value="ext_user_${Date.now().toString().slice(-4)}" class="input-field w-full text-xs font-mono">
+                  </div>
+                  <div class="sm:col-span-4 flex gap-1.5 flex-wrap">
+                    <button onclick="runClickSimulation('normal')" class="btn-solid-primary text-xs flex-1 min-h-[36px]" title="Click hợp lệ lần đầu">
+                      ⚡ Test Hợp lệ
+                    </button>
+                    <button onclick="runClickSimulation('duplicate')" class="btn-subtle text-xs flex-1 text-amber-400 border-amber-900/40 min-h-[36px]" title="Thử click trùng trong 30s">
+                      ⚠️ Test Trùng 30s
+                    </button>
+                    <button onclick="runClickSimulation('bot')" class="btn-subtle text-xs flex-1 text-rose-400 border-rose-900/40 min-h-[36px]" title="Thử bot user-agent">
+                      🛡️ Test Bot
+                    </button>
+                  </div>
+                </div>
+              `}
+            </div>
+
+            <!-- Real-Time Click Ledger Table -->
+            <div class="bg-surface border-hairline rounded-xl overflow-hidden">
+              <div class="px-5 py-3.5 border-hairline-b flex items-center justify-between">
+                <div>
+                  <h3 class="font-semibold text-white text-xs uppercase tracking-wider font-mono">
+                    Bảng kê chi tiết từng lượt Click (Real-Time Click Ledger)
+                  </h3>
+                  <p class="text-[11px] text-slate-400">Đối soát minh bạch: Chỉ các lượt click hợp lệ duy nhất mới bị khấu trừ phí CPC</p>
+                </div>
+                <span class="text-xs font-mono text-slate-400 bg-panel px-2.5 py-1 rounded border border-border">
+                  ${clicks.length} lượt gần nhất
+                </span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-panel border-hairline-b text-slate-400 font-mono text-[11px]">
+                      <th class="py-2.5 px-4 font-medium">Thời gian</th>
+                      <th class="py-2.5 px-4 font-medium">Sản phẩm</th>
+                      <th class="py-2.5 px-4 font-medium">User ID (ext_uid)</th>
+                      <th class="py-2.5 px-4 font-medium">IP Ẩn danh</th>
+                      <th class="py-2.5 px-4 font-medium text-center">Anti-Fraud Filter</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Giá thầu CPC</th>
+                      <th class="py-2.5 px-4 font-medium text-right">Khấu trừ ví</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    ${clicks.length === 0 ? `
+                      <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-500 font-sans">
+                          Chưa có lượt click nào. Bạn hãy dùng ô <strong>"Mô phỏng Kiểm thử Gateway"</strong> phía trên để test ngay!
+                        </td>
+                      </tr>
+                    ` : clicks.map(c => `
+                      <tr class="hover:bg-elevated/60 transition">
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.clicked_at ? c.clicked_at.slice(11, 19) : '--:--:--'}</td>
+                        <td class="py-2.5 px-4 font-medium text-slate-200 max-w-[200px] truncate">${c.product_title}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.ext_uid}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-400 text-[11px]">${c.ip_anonymized}</td>
+                        <td class="py-2.5 px-4 text-center">
+                          ${c.is_valid_unique ? `
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                              ✓ VALID UNIQUE
+                            </span>
+                          ` : `
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-950/80 text-amber-400 border border-amber-800/60">
+                              ⚠️ ${c.fraud_reason || 'BLOCKED'}
+                            </span>
+                          `}
+                        </td>
+                        <td class="py-2.5 px-4 text-right font-mono text-slate-300 tabular">${formatVND(c.committed_cpc)}</td>
+                        <td class="py-2.5 px-4 text-right font-mono font-bold tabular ${c.cpc_deducted > 0 ? 'text-emerald-400' : 'text-slate-500'}">
+                          ${c.cpc_deducted > 0 ? formatVND(c.cpc_deducted) : '0 ₫ (Free)'}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } catch (err) {
+        main.innerHTML = `<div class="p-6 bg-surface border-hairline rounded-xl text-xs text-rose-400">${err.message}</div>`;
+      }
+    }
+
+    async function handleQuickDeposit(amount) {
+      try {
+        const res = await apiRequest('/api/v1/shops/wallet/deposit', {
+          method: 'POST',
+          body: JSON.stringify({ amount: amount })
+        });
+        showToast(res.message, 'success');
+        renderReconciliationView();
+      } catch (err) {
+        showToast(err.message || 'Lỗi nạp tiền', 'error');
+      }
+    }
+
+    async function handleCustomDeposit() {
+      const input = document.getElementById('custom-deposit-amount');
+      const amount = parseFloat(input ? input.value : 0);
+      if (isNaN(amount) || amount <= 0) {
+        showToast('Vui lòng nhập số tiền hợp lệ (> 0)', 'error');
+        return;
+      }
+      return handleQuickDeposit(amount);
+    }
+
+    async function runClickSimulation(testType) {
+      const prodSelect = document.getElementById('sim-product-id');
+      const uidInput = document.getElementById('sim-ext-uid');
+      if (!prodSelect) return;
+
+      const prodId = prodSelect.value;
+      const uid = (uidInput ? uidInput.value.trim() : '') || 'tester_guest';
+
+      let testParam = '';
+      if (testType === 'duplicate') testParam = '&test_fraud=duplicate';
+      if (testType === 'bot') testParam = '&test_fraud=bot';
+
+      try {
+        await fetch(`/r/${prodId}?ext_uid=${encodeURIComponent(uid)}${testParam}`, {
+          redirect: 'manual'
+        });
+
+        showToast(`Đã gửi lượt click thử nghiệm [${testType.toUpperCase()}]!`, 'success');
+        renderReconciliationView();
+      } catch (e) {
+        showToast('Đã gửi click và ghi nhận đối soát', 'success');
+        renderReconciliationView();
+      }
+    }
+
+    async function handleDeleteProduct(id) {
+      if (!confirm('Xóa sản phẩm này khỏi hệ thống đối tác TAP AI?')) return;
+      try {
+        await apiRequest(`/api/v1/affiliate/products/${id}`, { method: 'DELETE' });
+        showToast('Đã xóa sản phẩm', 'success');
+        renderProductsView();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ==========================================
+    // 4. STAGE 1: MERCHANT ONBOARDING, BIO VERIFICATION & E-CONTRACTING
+    // ==========================================
+    async function renderVerificationView() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `<div class="h-64 skeleton"></div>`;
+
+      try {
+        const contractData = await apiRequest('/api/v1/shops/contract');
+        const isContractActive = contractData.contract_status === 'ACTIVE';
+        const isVerified = Boolean(contractData.is_verified);
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
+
+        main.innerHTML = `
+          <div class="max-w-3xl mx-auto space-y-6">
+            
+            <!-- Step Header -->
+            <div class="bg-surface border-hairline rounded-xl p-6 space-y-3">
+              <div class="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-brand-subtle px-2 py-0.5 rounded border border-emerald-900/40">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                STAGE 1: MERCHANT ONBOARDING &amp; E-CONTRACTING
+              </div>
+              <h2 class="text-lg font-bold text-white">Xác thực Quyền sở hữu &amp; Hợp đồng điện tử CPC</h2>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Hoàn tất xác thực mã định danh trên Shop Bio và ký số Hợp đồng điện tử bằng OTP để kích hoạt tài khoản đối tác chính hãng và mở khóa phân phối sản phẩm.
+              </p>
+            </div>
+
+            <!-- Part 1: Ownership Verification (VERIFY-XXXX token) -->
+            <div class="bg-surface border-hairline rounded-xl p-6 space-y-4">
+              <div class="flex items-center justify-between border-hairline-b pb-3">
+                <div>
+                  <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <span>1. Xác thực Quyền sở hữu Gian hàng (Bio Verification)</span>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded ${isVerified ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                      ${isVerified ? '✓ ĐÃ XÁC THỰC' : '○ CHƯA XÁC THỰC'}
+                    </span>
+                  </h3>
+                  <p class="text-xs text-slate-400 mt-1">Chèn mã Token vào phần Giới thiệu (Bio) hoặc Thẻ Meta trên shop để chứng minh bạn là chủ sở hữu gian hàng.</p>
+                </div>
+              </div>
+
+              <!-- Token Display Box -->
+              <div class="p-4 bg-panel border border-border rounded-lg space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span class="text-xs text-slate-300 font-medium">Mã Token xác thực của gian hàng bạn:</span>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded bg-black/60 border border-emerald-800/80 font-mono text-emerald-400 font-bold text-sm tracking-widest select-all">
+                      ${contractData.ownership_token || 'VERIFY-XXXX'}
+                    </span>
+                    <button onclick="copyOwnershipToken('${contractData.ownership_token}')" class="btn-subtle text-xs py-1 px-2.5 min-h-[32px]">
+                      Sao chép
+                    </button>
+                  </div>
+                </div>
+
+                <div class="text-[11px] text-slate-400 space-y-1 border-t border-border/60 pt-2.5">
+                  <p><strong>Hướng dẫn thực hiện:</strong></p>
+                  <p>1. Mở trang Kênh Người Bán Shopee hoặc TikTok Shop Seller Center của shop bạn: <code>${currentShop.shop_url}</code></p>
+                  <p>2. Dán chuỗi <code>${contractData.ownership_token}</code> vào phần <strong>Giới thiệu gian hàng (Shop Bio)</strong> rồi bấm Lưu.</p>
+                  <p>3. Bấm nút <strong>"Kiểm tra xác thực ngay"</strong> bên dưới để hoàn tất.</p>
+                </div>
+              </div>
+
+              ${!isVerified ? `
+                <button onclick="handleVerifyBio()" class="btn-solid-primary w-full justify-center py-2.5 text-xs min-h-[40px]">
+                  🔍 Kiểm tra xác thực ngay
+                </button>
+              ` : `
+                <div class="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-lg text-xs text-emerald-400 flex items-center gap-2">
+                  <span>✓</span>
+                  <span>Gian hàng đã được chứng thực chính chủ thành công thông qua mã Token trong Shop Bio.</span>
+                </div>
+              `}
+            </div>
+
+            <!-- Part 2: Digital CPC Agreement & E-Signature -->
+            <div class="bg-surface border-hairline rounded-xl p-6 space-y-4">
+              <div class="flex items-center justify-between border-hairline-b pb-3">
+                <div>
+                  <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <span>2. Hợp đồng Hợp tác Điện tử CPC (Digital CPC Agreement)</span>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded font-bold ${isContractActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                      ${isContractActive ? '✓ ACTIVE' : '○ PENDING'}
+                    </span>
+                  </h3>
+                  <p class="text-xs text-slate-400 mt-1">Văn bản thỏa thuận khung về đơn giá CPC, chính sách ký quỹ Escrow và quy chế chống gian lận Click Fraud.</p>
+                </div>
+              </div>
+
+              <!-- Contract Terms Scrollbox -->
+              <div class="p-4 bg-panel border border-border rounded-lg max-h-72 overflow-y-auto space-y-3 font-sans" style="font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; letter-spacing: normal !important;">
+                ${contractData.terms_html || ''}
+              </div>
+
+              <!-- E-Signature Action Box -->
+              <div class="p-4 bg-panel border border-border rounded-lg space-y-3">
+                ${isContractActive ? `
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-emerald-400 font-semibold text-xs">
+                      <span>✓</span>
+                      <span>HỢP ĐỒNG ĐÃ ĐƯỢC KÝ SỐ VÀ CÓ HIỆU LỰC (ACTIVE)</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 space-y-1 font-mono">
+                      <div>Thời gian ký: <span class="text-white">${contractData.contract_signed_at || 'Đã ký'}</span></div>
+                      <div>Bảo chứng toàn vẹn (SHA-256 Hash):</div>
+                      <div class="p-2 bg-black/50 border border-border rounded text-emerald-400 break-all select-all text-[11px]">
+                        ${contractData.contract_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+                      </div>
+                    </div>
+                    <div class="text-[11px] text-slate-400 pt-1">
+                      Toàn bộ tính năng Đăng ký sản phẩm, Thiết lập Bidding và Xuất JSON Feed đã được mở khóa!
+                    </div>
+                  </div>
+                ` : `
+                  <div class="space-y-3">
+                    <div class="text-xs font-semibold text-white">
+                      Ký số Hợp đồng bằng mã OTP (E-Signature)
+                    </div>
+                    <p class="text-[11px] text-slate-400">
+                      Nhập mã OTP đã được gửi đến email hoặc số điện thoại của bạn để ký số xác lập hợp đồng (Chữ ký điện tử có giá trị pháp lý theo Luật Giao dịch Điện tử).
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                      <input 
+                        type="text" 
+                        id="contract-otp-input" 
+                        placeholder="Nhập mã OTP (VD: 123456)" 
+                        maxlength="6" 
+                        class="input-field flex-1 text-xs font-mono tracking-widest text-center sm:text-left"
+                      >
+                      <button onclick="handleSignContractOtp()" class="btn-solid-primary text-xs whitespace-nowrap min-h-[36px]">
+                        <span>✍️ Ký số Hợp đồng (E-Signature)</span>
+                      </button>
+                    </div>
+                    <div class="text-[10px] text-slate-400 italic">
+                      Gợi ý: Bạn có thể nhập mã OTP demo <code>123456</code> để hoàn tất ký số tức thì trong môi trường kiểm thử.
+                    </div>
+                  </div>
+                `}
+              </div>
+
+            </div>
+
+          </div>
+        `;
+      } catch (err) {
+        main.innerHTML = `<div class="p-6 bg-surface border-hairline rounded-xl text-xs text-rose-400">${err.message}</div>`;
+      }
+    }
+
+    function copyOwnershipToken(token) {
+      navigator.clipboard.writeText(token || 'VERIFY-XXXX').then(() => {
+        showToast('Đã sao chép mã Token: ' + token, 'success');
+      });
+    }
+
+    async function handleVerifyBio() {
+      try {
+        const res = await apiRequest('/api/v1/shops/ownership/verify', { method: 'POST' });
+        showToast(res.message || 'Xác thực gian hàng thành công!', 'success');
+        renderVerificationView();
+      } catch (err) {
+        showToast(err.message || 'Lỗi xác thực', 'error');
+      }
+    }
+
+    async function handleSignContractOtp() {
+      const input = document.getElementById('contract-otp-input');
+      const otp = input ? input.value.trim() : '';
+      if (!otp) {
+        showToast('Vui lòng nhập mã OTP', 'error');
+        return;
+      }
+
+      try {
+        const res = await apiRequest('/api/v1/shops/contract/sign', {
+          method: 'POST',
+          body: JSON.stringify({ otp_code: otp })
+        });
+        showToast(res.message || 'Ký số hợp đồng thành công! Hợp đồng đã ACTIVE.', 'success');
+        if (currentShop) {
+          currentShop.contract_status = 'ACTIVE';
+          renderHeader();
+        }
+        renderVerificationView();
+      } catch (err) {
+        showToast(err.message || 'Mã OTP không đúng', 'error');
+      }
+    }
+
+
+    // ==========================================
+    // 4. AUTH MODAL HELPERS
+    // ==========================================
+    function openAuthModal(mode = 'login') {
+      document.getElementById('auth-modal').classList.remove('hidden');
+      setAuthMode(mode);
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function showModalAlert(msg, type = 'error') {
+      const el = document.getElementById('modal-alert');
+      if (!el) return;
+      if (!msg) {
+        el.classList.add('hidden');
+        el.innerHTML = '';
+        return;
+      }
+      el.classList.remove('hidden');
+      if (type === 'error') {
+        el.className = "mb-4 p-3 rounded-lg text-xs flex items-center gap-2 border border-rose-800 bg-rose-950/80 text-rose-200 animate-fadeIn";
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span><span>${msg}</span>`;
+      } else if (type === 'success') {
+        el.className = "mb-4 p-3 rounded-lg text-xs flex items-center gap-2 border border-emerald-800 bg-emerald-950/80 text-emerald-200 animate-fadeIn";
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span><span>${msg}</span>`;
+      } else {
+        el.className = "mb-4 p-3 rounded-lg text-xs flex items-center gap-2 border border-blue-800 bg-blue-950/80 text-blue-200 animate-fadeIn";
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span><span>${msg}</span>`;
+      }
+    }
+
+    function setAuthMode(mode) {
+      showModalAlert(null);
+      const loginForm = document.getElementById('form-login');
+      const regForm = document.getElementById('form-register');
+      const otpForm = document.getElementById('form-otp');
+      const tabLogin = document.getElementById('modal-tab-login');
+      const tabReg = document.getElementById('modal-tab-register');
+
+      loginForm.classList.add('hidden');
+      regForm.classList.add('hidden');
+      otpForm.classList.add('hidden');
+
+      if (mode === 'login') {
+        loginForm.classList.remove('hidden');
+        tabLogin.className = "flex-1 py-1.5 rounded text-xs font-semibold bg-elevated text-white border border-border transition";
+        tabReg.className = "flex-1 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-white transition";
+      } else if (mode === 'register') {
+        regForm.classList.remove('hidden');
+        tabReg.className = "flex-1 py-1.5 rounded text-xs font-semibold bg-elevated text-white border border-border transition";
+        tabLogin.className = "flex-1 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-white transition";
+      } else if (mode === 'otp') {
+        otpForm.classList.remove('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      showModalAlert(null);
+      const email = document.getElementById('login-email').value;
+      const pwd = document.getElementById('login-pwd').value;
+      try {
+        const res = await apiRequest('/api/v1/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email_or_phone: email, password: pwd })
+        });
+        localStorage.setItem('tapai_token', res.access_token);
+        closeAuthModal();
+        showToast('Đăng nhập thành công', 'success');
+        await checkAuth();
+      } catch (err) {
+        showModalAlert(err.message || 'Sai thông tin đăng nhập', 'error');
+        showToast(err.message || 'Sai thông tin đăng nhập', 'error');
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      showModalAlert(null);
+      pendingOtpEmail = document.getElementById('reg-email').value.trim();
+      let shopUrl = document.getElementById('reg-shop-url').value.trim();
+      if (shopUrl && !shopUrl.startsWith('http://') && !shopUrl.startsWith('https://')) {
+        shopUrl = 'https://' + shopUrl;
+      }
+      const payload = {
+        shop_name: document.getElementById('reg-shop-name').value.trim(),
+        platform: document.getElementById('reg-platform').value,
+        shop_url: shopUrl || 'https://shopee.vn',
+        email: pendingOtpEmail,
+        phone: document.getElementById('reg-phone').value.trim(),
+        password: document.getElementById('reg-pwd').value
+      };
+      try {
+        const res = await apiRequest('/api/v1/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        showToast(res.message || 'Mã OTP đã gửi đến email', 'success');
+        setAuthMode('otp');
+        if (res.data?.dev_otp) {
+          showModalAlert(`Mã OTP của bạn: 【 ${res.data.dev_otp} 】 (Đã tự động điền)`, 'info');
+          setTimeout(() => {
+            const otpInput = document.getElementById('otp-input');
+            if (otpInput) otpInput.value = res.data.dev_otp;
+          }, 150);
+        }
+      } catch (err) {
+        showModalAlert(err.message || 'Lỗi đăng ký', 'error');
+        showToast(err.message || 'Lỗi đăng ký', 'error');
+      }
+    }
+
+    async function handleOtpSubmit(e) {
+      e.preventDefault();
+      showModalAlert(null);
+      const otp = document.getElementById('otp-input').value;
+      try {
+        await apiRequest('/api/v1/auth/verify-email', {
+          method: 'POST',
+          body: JSON.stringify({ email: pendingOtpEmail, otp_code: otp })
+        });
+        showToast('Xác thực OTP thành công!', 'success');
+        const pwd = document.getElementById('reg-pwd')?.value;
+        if (pwd) {
+          const res = await apiRequest('/api/v1/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email_or_phone: pendingOtpEmail, password: pwd })
+          });
+          localStorage.setItem('tapai_token', res.access_token);
+          closeAuthModal();
+          await checkAuth();
+        } else {
+          setAuthMode('login');
+        }
+      } catch (err) {
+        showModalAlert(err.message || 'Mã OTP không đúng', 'error');
+        showToast(err.message || 'Mã OTP không đúng', 'error');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('tapai_token');
+      currentShop = null;
+      const mobileNavBar = document.getElementById('mobile-nav-bar');
+      if (mobileNavBar) mobileNavBar.classList.add('hidden');
+      showToast('Đã đăng xuất', 'info');
+      renderHeader();
+      renderMain();
+    }
+  </script>
+</body>
+</html>

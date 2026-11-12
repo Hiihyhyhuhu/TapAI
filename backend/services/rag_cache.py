@@ -4,10 +4,21 @@ import time
 from typing import List, Optional, Dict, Any, Union
 from PIL import Image
 import torch
-import timm
-from timm.data import create_transform, resolve_model_data_config
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+try:
+    import timm
+    from timm.data import create_transform, resolve_model_data_config
+except ImportError:
+    timm = None
+    create_transform = None
+    resolve_model_data_config = None
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import Distance, VectorParams, PointStruct
+except ImportError:
+    QdrantClient = None
+    Distance = None
+    VectorParams = None
+    PointStruct = None
 from models.search_schemas import ProductCandidate, EcomSearchQuery
 
 class ImageEmbedder:

@@ -10,3 +10,8 @@ python-multipart>=0.0.9
 timm>=1.0.0
 torch>=2.0.0
 open_clip_torch>=2.24.0
+# --- Affiliate Portal (Phase 1) ---
+sqlalchemy>=2.0.0,<2.1.0
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+slowapi>=0.1.9
