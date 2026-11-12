@@ -60,6 +60,8 @@ TAP AI introduces **OmniLayer AI**, an interactive media system based on the cor
 ### 2.3 Business & Monetization Model
 
 * **B2C Affiliate Commissions:** Earn a $5\% - 20\%$ commission on sales completed via product link redirects from the TAP AI side panel.
+* **B2B Direct Merchant Portal & CPC Bidding:** E-commerce merchants partner directly through the self-service [Merchant Portal](portal/README.md), setting competitive CPC bids (Cost-Per-Click $\ge 2,000\text{ VND}$) backed by prepaid escrow wallets.
+* **Transparent Anti-Fraud Protection:** Proprietary 3-tier click filter (Bot detection, 30s duplicate click window, IP rate limits) ensuring merchants only pay for verified high-intent shopper traffic.
 
 ---
 
@@ -74,6 +76,30 @@ TAP AI introduces **OmniLayer AI**, an interactive media system based on the cor
 | **Task Queue & Cache** | Celery + Redis | Asynchronous background processing for long-duration video segmentation tasks. |
 | **Frontend / Extension** | React.js / Chrome Extension Manifest V3 | Client-side extension UI (Video Overlay + Chrome `sidePanel` API integration). |
 | **Overlay Engine** | HTML5 Canvas / WebGL (Glimmer) | Real-time rendering ($60\text{ FPS}$) of glowing contours and bounding overlays over media streams. |
+| **Merchant Portal** | React 19 + Tailwind CSS / Single-file Standalone | Self-service B2B portal for merchant onboarding, e-contracting, and CPC bidding. |
+| **B2B Billing & Anti-Fraud** | SQLite / PostgreSQL + FastAPI Gateway | Atomic escrow wallet deduction, SHA-256 e-signatures, and 3-tier click fraud protection. |
+
+### 3.1 Direct Merchant Portal Workflow (CPC & JSON Feed Model)
+
+The B2B Direct Merchant Portal enables brand owners and sellers to inject their catalog directly into TAP AI's interactive media stream through a 4-stage automated lifecycle:
+
+```text
+[Stage 1: Onboarding & E-Contracting]
+  Shop Registers ──► Bio Token (`VERIFY-XXXX`) ──► E-Signature (OTP + SHA-256) ──► Status: ACTIVE
+
+[Stage 2: Bidding & Escrow Funding]
+  Register Products ──► Set CPC Bid (≥ 2,000 VND) ──► Top-up Prepaid Escrow Wallet ──► Status: ELIGIBLE
+
+[Stage 3: JSON Data Feed Export]
+  Serializer Job ──► Validates Active Contracts & Positive Balances ──► Dispatches `merchant_products_feed.json` to Core AI
+
+[Stage 4: Click Tracking & Anti-Fraud]
+  User Clicks Product in Extension ──► Redirect Gateway (`/r/{product_id}`) ──► 3-Tier Anti-Fraud Filter
+    ├─ Invalid / Duplicate (<30s) / Bot: Cost = 0 VND ──► 302 Redirect
+    └─ Valid Unique Click: Deduct CPC from Wallet ──► Log to Click Ledger ──► 302 Redirect to Shop
+```
+
+*For detailed technical specifications, architecture diagrams, and API endpoints, refer to [portal/README.md](portal/README.md) and [DOCS.md](DOCS.md).*
 
 ---
 
@@ -88,13 +114,15 @@ TAP AI is developed as an **Open-Source** project.
 
 ---
 
-## 🚀 5. Getting Started (Chrome Extension Frontend)
+## 🚀 5. Getting Started
 
-### Prerequisites
+### 5.1 Chrome Extension Frontend
+
+#### Prerequisites
 * Google Chrome (v114+ for Manifest V3 SidePanel API support)
 * Node.js (v18+) & `npm` / `pnpm`
 
-### Local Development Setup
+#### Local Development Setup
 
 1. **Clone the repository:**
    ```bash
@@ -117,6 +145,25 @@ TAP AI is developed as an **Open-Source** project.
    * Enable **Developer mode** (toggle in the top-right corner).
    * Click **Load unpacked**.
    * Select the `dist/` directory generated from the build step.
+
+### 5.2 Backend API & Direct Merchant Portal
+
+1. **Start the FastAPI Unified Backend:**
+   ```bash
+   cd backend
+   uvicorn main:app --reload --port 8000
+   ```
+   * Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+2. **Access the Merchant Portal:**
+   * Open directly in browser: [http://localhost:8000/portal/index.standalone.html](http://localhost:8000/portal/index.standalone.html)
+   * Or run with Python launcher: `python run_portal.py`
+   * Demo Credentials: `demo@tapai.vn` / `123456` (OTP: `123456`)
+
+3. **Run Automated E2E Workflow Test:**
+   ```bash
+   python test_portal_cpc_workflow.py
+   ```
 
 ---
 
