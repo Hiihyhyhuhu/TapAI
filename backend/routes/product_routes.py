@@ -365,6 +365,12 @@ def serialize_eligible_feed_items(db: Session, shop_id: Optional[str] = None) ->
 
     for ap in aff_list:
         shop = db.query(Shop).filter(Shop.id == ap.shop_id).first()
+        base_rate = float(ap.platform_base_rate or 0.0)
+        extra_rate = float(ap.seller_extra_rate or 0.0)
+        total_comm = float(ap.total_commission_rate or (base_rate + extra_rate))
+        price_val = float(ap.current_price or 0.0)
+        est_commission = round(price_val * total_comm / 100.0, 2)
+
         feed_items.append({
             "product_id": ap.id,
             "platform_item_id": ap.platform_item_id,
@@ -373,8 +379,16 @@ def serialize_eligible_feed_items(db: Session, shop_id: Optional[str] = None) ->
             "platform": ap.platform,
             "title": ap.title,
             "image_url": ap.image_url,
-            "price": float(ap.current_price or 0.0),
+            "price": price_val,
             "currency": "VND",
+            # --- Commission Metrics (% Hoa hồng & Ước tính hoa hồng) ---
+            "platform_base_rate": base_rate,
+            "seller_extra_rate": extra_rate,
+            "total_commission_rate": total_comm,
+            "commission_percentage": f"{total_comm:.1f}%",
+            "commission_amount_estimate": est_commission,
+            "priority_score": float(ap.priority_score or round(total_comm / 100.0, 4)),
+            # --- CPC Bidding & Budget ---
             "committed_cpc_bid": float(ap.cpc_bid or 2000.0),
             "cpc_bid": float(ap.cpc_bid or 2000.0),
             "daily_budget": float(ap.daily_budget or 100000.0),
@@ -407,6 +421,13 @@ def serialize_eligible_feed_items(db: Session, shop_id: Optional[str] = None) ->
         except Exception:
             img = lp.image_urls
 
+        latest_comm = lp.commissions[-1] if lp.commissions else None
+        base_rate = float(latest_comm.platform_rate or 0.0) if latest_comm else 5.0
+        extra_rate = float(latest_comm.extra_rate or 0.0) if latest_comm else 0.0
+        total_comm = base_rate + extra_rate
+        price_val = float(lp.price or 0.0)
+        est_commission = round(price_val * total_comm / 100.0, 2)
+
         feed_items.append({
             "product_id": lp.id,
             "platform_item_id": lp.id[:10],
@@ -415,8 +436,16 @@ def serialize_eligible_feed_items(db: Session, shop_id: Optional[str] = None) ->
             "platform": lp.platform,
             "title": lp.name,
             "image_url": img,
-            "price": float(lp.price or 0.0),
+            "price": price_val,
             "currency": lp.currency or "VND",
+            # --- Commission Metrics (% Hoa hồng & Ước tính hoa hồng) ---
+            "platform_base_rate": base_rate,
+            "seller_extra_rate": extra_rate,
+            "total_commission_rate": total_comm,
+            "commission_percentage": f"{total_comm:.1f}%",
+            "commission_amount_estimate": est_commission,
+            "priority_score": round(total_comm / 100.0, 4),
+            # --- CPC Bidding & Budget ---
             "committed_cpc_bid": float(lp.cpc_bid or 2000.0),
             "daily_budget": float(lp.daily_budget or 100000.0),
             "today_spent": float(lp.today_spent or 0.0),
