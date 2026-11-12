@@ -1,5 +1,7 @@
 import os
 import time
+import uuid
+import asyncio
 from typing import Dict, Any, Union
 from PIL import Image
 from models.search_schemas import EcomSearchQuery, ProductCandidate
@@ -41,7 +43,7 @@ class TapAISearchPipeline:
             cleanup_temp = False
         else:
             pil_image = image_input.convert("RGB")
-            temp_path = f"./temp_{object_id}_{int(time.time()*1000)}.jpg"
+            temp_path = f"./temp_{uuid.uuid4().hex}.jpg"
             pil_image.save(temp_path)
             cleanup_temp = True
 
@@ -50,7 +52,7 @@ class TapAISearchPipeline:
 
             # 1. Phân tích ảnh sinh từ khóa qua VLM (Gemini 3.5 Flash-Lite)
             t_a = time.perf_counter()
-            query_info = self.query_generator.generate_from_image(temp_path)
+            query_info = await asyncio.to_thread(self.query_generator.generate_from_image, temp_path)
             t_b = time.perf_counter()
             print(f"   [1/3] VLM Query Gen: {query_info.exact_query} (trong {t_b - t_a:.2f}s)")
 

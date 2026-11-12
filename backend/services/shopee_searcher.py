@@ -106,7 +106,11 @@ class ShopeeWebSearcher:
         shopping_prices: List[str] = []
 
         async with httpx.AsyncClient() as client:
-            for current_query in [query_obj.exact_query, query_obj.broad_query]:
+            queries_to_run = [query_obj.exact_query]
+            if query_obj.broad_query and query_obj.broad_query != query_obj.exact_query:
+                queries_to_run.append(query_obj.broad_query)
+
+            for current_query in queries_to_run:
                 ecom_query = f"{current_query} shopee.vn"
 
                 img_task = self._fetch_serper(client, "images", ecom_query, num=25)
@@ -131,17 +135,19 @@ class ShopeeWebSearcher:
                         continue
 
                     uid = prod_meta["unique_id"]
-                    title = img_item.get("title", "").replace(" | Shopee Việt Nam", "").replace(" | Lazada.vn", "").strip()
+                    raw_title = img_item.get("title") or ""
+                    title = raw_title.replace(" | Shopee Việt Nam", "").replace(" | Lazada.vn", "").strip()
 
-                    candidates_map[uid] = ProductCandidate(
-                        item_id=uid,
-                        title=title,
-                        price=self.extract_price(title),
-                        platform=prod_meta["platform"],
-                        product_url=prod_meta["clean_url"],
-                        thumbnail_url=thumb_url,
-                        query_used=current_query
-                    )
+                    if uid not in candidates_map:
+                        candidates_map[uid] = ProductCandidate(
+                            item_id=uid,
+                            title=title,
+                            price=self.extract_price(title),
+                            platform=prod_meta["platform"],
+                            product_url=prod_meta["clean_url"],
+                            thumbnail_url=thumb_url,
+                            query_used=current_query
+                        )
 
                 # 2. Quét Google Web Search để bổ sung giá tiền từ snippet
                 for item in web_data.get("organic", []):
@@ -150,8 +156,9 @@ class ShopeeWebSearcher:
                         continue
 
                     uid = prod_meta["unique_id"]
-                    title = item.get("title", "").replace(" | Shopee Việt Nam", "").replace(" | Lazada.vn", "").strip()
-                    snippet = item.get("snippet", "")
+                    raw_title = item.get("title") or ""
+                    title = raw_title.replace(" | Shopee Việt Nam", "").replace(" | Lazada.vn", "").strip()
+                    snippet = item.get("snippet") or ""
                     price_found = self.extract_price(f"{title} {snippet}")
                     thumb = item.get("imageUrl") or ""
 
@@ -169,13 +176,13 @@ class ShopeeWebSearcher:
                             query_used=current_query
                         )
 
-                # Gán giá tham khảo nếu sản phẩm chưa có giá hiển thị
-                valid_list = list(candidates_map.values())
-                for idx, prod in enumerate(valid_list):
-                    if prod.price == "Xem trên sàn" and shopping_prices:
-                        prod.price = f"~{shopping_prices[idx % len(shopping_prices)]}"
+                if len(candidates_map) >= max_results:
+                    break
 
-                if len(valid_list) >= max_results:
-                    return valid_list[:max_results]
+        # Gán giá tham khảo nếu sản phẩm chưa có giá hiển thị
+        valid_list = list(candidates_map.values())[:max_results]
+        for idx, prod in enumerate(valid_list):
+            if prod.price == "Xem trên sàn" and shopping_prices:
+                prod.price = f"~{shopping_prices[idx % len(shopping_prices)]}"
 
-        return list(candidates_map.values())[:max_results]
+        return valid_list

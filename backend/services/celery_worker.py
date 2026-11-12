@@ -33,8 +33,7 @@ try:
         pipeline = TapAISearchPipeline()
         task_id = self.request.id
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
+        asyncio.run(
             task_manager.run_video_pipeline(task_id, payload, pipeline)
         )
         return {"status": "SUCCESS", "task_id": task_id, "video_id": payload.video_id}

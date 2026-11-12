@@ -117,7 +117,7 @@ class MatchItemRequest(BaseModel):
         description="URL trực tiếp của ảnh trên web (Extension truyền trực tiếp img.src)"
     )
     object_id: str = Field(default="obj_01", description="Mã định danh vật thể")
-    top_k: int = Field(default=20, description="Số sản phẩm cần lấy (mặc định 20)")
+    top_k: int = Field(default=20, ge=1, le=20, description="Số sản phẩm cần lấy (mặc định 20, tối đa 20)")
 
 class VideoDetection(BaseModel):
     object_id: str = Field(description="Mã định danh vật thể do SAM 3 gán (VD: obj_01, obj_02)")
@@ -131,7 +131,7 @@ class VideoDetection(BaseModel):
 class VideoBatchRequest(BaseModel):
     video_id: str = Field(description="Mã video đang xử lý")
     detections: List[VideoDetection] = Field(description="Danh sách tất cả các detections của SAM 3 trong video")
-    top_k: int = Field(default=20, description="Số sản phẩm cần lấy cho mỗi vật thể (mặc định 20)")
+    top_k: int = Field(default=20, ge=1, le=20, description="Số sản phẩm cần lấy cho mỗi vật thể (mặc định 20, tối đa 20)")
     fps: Optional[float] = Field(default=30.0, description="Tốc độ khung hình của video (FPS)")
     duration_sec: Optional[float] = Field(default=None, description="Tổng thời lượng video (giây)")
     resolution: Optional[List[int]] = Field(default=None, description="[width, height] của video gốc")

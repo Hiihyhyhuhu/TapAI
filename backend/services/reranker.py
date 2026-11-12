@@ -93,7 +93,8 @@ class MultimodalReranker:
             tasks = [self._download_image(client, c.thumbnail_url) for c in candidates]
             downloaded_imgs = await asyncio.gather(*tasks)
 
-        target_img = Image.open(crop_image_path).convert("RGB")
+        with Image.open(crop_image_path) as target_file:
+            target_img = target_file.convert("RGB")
 
         # 2. Xây dựng prompt đa phương thức gửi cho VLM
         contents = [
@@ -115,37 +116,42 @@ class MultimodalReranker:
             "   - 0.00 - 0.39: Khác kiểu dáng (VD: áo cardigan thay vì áo khóa kéo, sọc caro thay vì sọc ngang).\n"
         ]
 
+        valid_candidate_ids = set()
         for idx, (cand, img) in enumerate(zip(candidates, downloaded_imgs), 1):
             if img is not None:
                 contents.append(f"\n--- [Ứng viên #{idx}] Item ID: {cand.item_id} ---")
                 contents.append(f"Tiêu đề: {cand.title}")
                 contents.append(img)
+                valid_candidate_ids.add(cand.item_id)
             else:
                 cand.match_score = 0.0
                 cand.match_reason = "Không tải được ảnh sản phẩm để thẩm định."
 
-        # 3. Gọi Gemini VLM để thẩm định và chấm điểm
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=RerankOutput,
-                    temperature=0.1,
-                ),
-            )
-            vlm_eval = RerankOutput.model_validate_json(response.text)
-            eval_map = {item.item_id: item for item in vlm_eval.evaluations}
+        # 3. Gọi Gemini VLM để thẩm định và chấm điểm (chỉ gọi nếu có ít nhất 1 ảnh ứng viên hợp lệ)
+        if valid_candidate_ids:
+            try:
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=self.model_name,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=RerankOutput,
+                        temperature=0.1,
+                    ),
+                )
+                vlm_eval = RerankOutput.model_validate_json(response.text)
+                eval_map = {item.item_id: item for item in vlm_eval.evaluations}
 
-            for cand in candidates:
-                if cand.item_id in eval_map:
-                    ev = eval_map[cand.item_id]
-                    cand.match_score = round(ev.match_score, 4)
-                    cand.match_reason = ev.reason
+                for cand in candidates:
+                    if cand.item_id in eval_map:
+                        ev = eval_map[cand.item_id]
+                        clamped_score = max(0.0, min(1.0, ev.match_score))
+                        cand.match_score = round(clamped_score, 4)
+                        cand.match_reason = ev.reason
 
-        except Exception as e:
-            print(f"⚠️ Lỗi trong quá trình VLM Reranking: {e}")
+            except Exception as e:
+                print(f"⚠️ Lỗi trong quá trình VLM Reranking: {e}")
 
         # 4. Tự động nhận diện trọng số theo mùa (Auto-Seasonality) nếu không chỉ định thủ công
         season_profile = SeasonalityEngine.get_weights()

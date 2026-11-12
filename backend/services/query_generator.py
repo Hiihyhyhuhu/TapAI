@@ -21,7 +21,8 @@ class QueryGenerator:
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Không tìm thấy file ảnh tại: {image_path}")
 
-        img = Image.open(image_path)
+        with Image.open(image_path) as img_file:
+            img = img_file.convert("RGB")
 
         prompt = """
         Bạn là chuyên gia phân loại danh mục sản phẩm Thương mại điện tử tại Việt Nam (Shopee, Lazada).

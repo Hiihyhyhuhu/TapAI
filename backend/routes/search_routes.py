@@ -106,7 +106,7 @@ async def match_single_item_upload(
     request: Request,
     file: UploadFile = File(..., description="Chọn file ảnh WebP/PNG/JPG từ máy tính của bạn"),
     object_id: str = Form("obj_01", description="Mã định danh vật thể"),
-    top_k: int = Form(5, description="Số sản phẩm cần lấy (mặc định 5, tối đa 20)")
+    top_k: int = Form(5, ge=1, le=20, description="Số sản phẩm cần lấy (mặc định 5, tối đa 20)")
 ):
     """
     Endpoint hỗ trợ tải file ảnh trực tiếp qua giao diện Swagger UI:

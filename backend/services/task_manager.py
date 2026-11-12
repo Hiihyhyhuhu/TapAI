@@ -135,18 +135,19 @@ class VideoTaskManager:
 
             # 1. DEDUPLICATION
             grouped_objects: Dict[str, VideoDetection] = {}
+            best_scores: Dict[str, float] = {}
             for det in payload.detections:
-                x1, y1, x2, y2 = det.bbox
-                area = max(0.0, x2 - x1) * max(0.0, y2 - y1)
-                score = area * (det.confidence or 1.0)
-
-                if det.object_id not in grouped_objects:
-                    det._score = score
-                    grouped_objects[det.object_id] = det
+                if len(det.bbox) == 4:
+                    x1, y1, x2, y2 = det.bbox
+                    area = max(0.0, x2 - x1) * max(0.0, y2 - y1)
                 else:
-                    if score > getattr(grouped_objects[det.object_id], "_score", 0.0):
-                        det._score = score
-                        grouped_objects[det.object_id] = det
+                    area = 0.0
+                conf = det.confidence if det.confidence is not None else 1.0
+                score = area * conf
+
+                if det.object_id not in grouped_objects or score > best_scores[det.object_id]:
+                    best_scores[det.object_id] = score
+                    grouped_objects[det.object_id] = det
 
             total_unique = len(grouped_objects)
             self.update_task(
@@ -158,59 +159,50 @@ class VideoTaskManager:
 
             # 2. XỬ LÝ SEARCH & RERANK
             tracked_objects: Dict[str, TrackedObject] = {}
-            for idx, (obj_id, best_det) in enumerate(grouped_objects.items(), start=1):
-                step_progress = 0.10 + (idx / total_unique) * 0.75
-                self.update_task(
-                    task_id,
-                    progress=step_progress,
-                    current_step=f"Đang xử lý vật thể [{idx}/{total_unique}]: '{obj_id}' (Frame {best_det.frame_index})..."
-                )
-
-                try:
-                    clean_b64 = best_det.image_base64
-                    if "," in clean_b64:
-                        clean_b64 = clean_b64.split(",", 1)[1]
-                    img_bytes = base64.b64decode(clean_b64)
-                    pil_image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-
-                    search_res = await pipeline.process_image(
-                        image_input=pil_image,
-                        object_id=obj_id,
-                        use_cache=payload.use_cache,
-                        top_k=payload.top_k
+            if total_unique > 0:
+                for idx, (obj_id, best_det) in enumerate(grouped_objects.items(), start=1):
+                    step_progress = 0.10 + (idx / total_unique) * 0.75
+                    self.update_task(
+                        task_id,
+                        progress=step_progress,
+                        current_step=f"Đang xử lý vật thể [{idx}/{total_unique}]: '{obj_id}' (Frame {best_det.frame_index})..."
                     )
 
-                    candidates = [
-                        ProductCandidate(
-                            item_id=p.get("item_id", ""),
-                            title=p.get("title", ""),
-                            price=p.get("price", ""),
-                            platform=p.get("platform", "Shopee"),
-                            product_url=p.get("product_url", ""),
-                            thumbnail_url=p.get("thumbnail_url", ""),
-                            query_used=p.get("query_used", ""),
-                            match_score=p.get("match_score", 0.0),
-                            match_reason=p.get("match_reason")
+                    try:
+                        clean_b64 = best_det.image_base64
+                        if "," in clean_b64:
+                            clean_b64 = clean_b64.split(",", 1)[1]
+                        img_bytes = base64.b64decode(clean_b64)
+                        with Image.open(io.BytesIO(img_bytes)) as img_file:
+                            pil_image = img_file.convert("RGB")
+
+                        search_res = await pipeline.process_image(
+                            image_input=pil_image,
+                            object_id=obj_id,
+                            top_k=payload.top_k
                         )
-                        for p in search_res.get("products", [])
-                    ]
 
-                    tracked_objects[obj_id] = TrackedObject(
-                        object_id=obj_id,
-                        label=search_res.get("exact_query", f"Sản phẩm {obj_id}"),
-                        category=search_res.get("detected_category", "Thời trang"),
-                        primary_color=None,
-                        matched_products=candidates
-                    )
+                        candidates = [
+                            ProductCandidate.model_validate(p)
+                            for p in search_res.get("products", [])
+                        ]
 
-                except Exception as ex:
-                    print(f"⚠️ Lỗi khi xử lý vật thể '{obj_id}' trong task '{task_id}': {ex}")
-                    tracked_objects[obj_id] = TrackedObject(
-                        object_id=obj_id,
-                        label=f"Vật thể {obj_id}",
-                        category="Không xác định",
-                        matched_products=[]
-                    )
+                        tracked_objects[obj_id] = TrackedObject(
+                            object_id=obj_id,
+                            label=search_res.get("exact_query", f"Sản phẩm {obj_id}"),
+                            category=search_res.get("detected_category", "Thời trang"),
+                            primary_color=None,
+                            matched_products=candidates
+                        )
+
+                    except Exception as ex:
+                        print(f"⚠️ Lỗi khi xử lý vật thể '{obj_id}' trong task '{task_id}': {ex}")
+                        tracked_objects[obj_id] = TrackedObject(
+                            object_id=obj_id,
+                            label=f"Vật thể {obj_id}",
+                            category="Không xác định",
+                            matched_products=[]
+                        )
 
             # 3. TIMELINE TRACKING
             self.update_task(
@@ -220,15 +212,18 @@ class VideoTaskManager:
             )
 
             frames_map: Dict[int, List[ObjectDetectionOverlay]] = {}
+            frame_timestamps: Dict[int, float] = {}
             for det in payload.detections:
                 f_idx = det.frame_index
                 if f_idx not in frames_map:
                     frames_map[f_idx] = []
+                if f_idx not in frame_timestamps and det.timestamp is not None:
+                    frame_timestamps[f_idx] = det.timestamp
                 frames_map[f_idx].append(
                     ObjectDetectionOverlay(
                         object_id=det.object_id,
                         bbox=det.bbox,
-                        confidence=det.confidence or 1.0,
+                        confidence=det.confidence if det.confidence is not None else 1.0,
                         polygon=det.polygon
                     )
                 )
@@ -236,7 +231,7 @@ class VideoTaskManager:
             fps = payload.fps or 30.0
             timeline: List[TimelineFrame] = []
             for f_idx in sorted(frames_map.keys()):
-                ts = det.timestamp if det.timestamp is not None else round(f_idx / fps, 3)
+                ts = frame_timestamps.get(f_idx, round(f_idx / fps, 3))
                 timeline.append(
                     TimelineFrame(
                         timestamp=ts,

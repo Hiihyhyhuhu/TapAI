@@ -1543,7 +1543,6 @@ class SAM3Engine:
                 result = await search_pipeline_instance.process_image(
                     image_input=crop_webp_path,
                     object_id=obj_id,
-                    use_cache=True,
                     top_k=5
                 )
                 return {
