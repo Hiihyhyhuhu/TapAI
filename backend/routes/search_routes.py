@@ -4,7 +4,7 @@ import base64
 from typing import Dict, Any, Optional
 from PIL import Image
 import httpx
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, status
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, status, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 
 from models.search_schemas import (
@@ -98,62 +98,57 @@ async def extract_pil_image_from_sources(
 # 1. INSTANT MATCH (Hỗ trợ Base64, Image URL, File)
 # ============================================================================
 @router.post(
-    "/match-item", 
-    summary="Tìm kiếm sản phẩm tức thời cho 1 ảnh crop (Hỗ trợ Base64, Image URL, File)",
+    "/match-item/upload", 
+    summary="[TEST TRỰC TIẾP] Tải file ảnh lên từ máy tính (Có nút chọn file)",
     response_model=Dict[str, Any]
 )
-async def match_single_item(request: Request):
+async def match_single_item_upload(
+    request: Request,
+    file: UploadFile = File(..., description="Chọn file ảnh WebP/PNG/JPG từ máy tính của bạn"),
+    object_id: str = Form("obj_01", description="Mã định danh vật thể"),
+    top_k: int = Form(5, description="Số sản phẩm cần lấy (mặc định 5, tối đa 20)")
+):
+    """
+    Endpoint hỗ trợ tải file ảnh trực tiếp qua giao diện Swagger UI:
+    - Bấm nút 'Try it out' -> Bấm 'Choose File' để chọn ảnh từ máy tính.
+    - Hệ thống xử lý qua luồng cốt lõi: Gemini VLM -> Serper Shopee Searcher -> Gemini Reranker.
+    """
     pipeline = get_pipeline(request)
-    content_type = request.headers.get("content-type", "")
-
-    file_bytes = None
-    image_base64 = None
-    image_url = None
-    object_id = "obj_01"
-    use_cache = True
-    cache_threshold = 0.88
-    top_k = 5
-
-    if "application/json" in content_type:
-        try:
-            body = await request.json()
-        except Exception:
-            raise HTTPException(status_code=400, detail="JSON body không hợp lệ")
-        image_base64 = body.get("image_base64")
-        image_url = body.get("image_url")
-        object_id = body.get("object_id", "obj_01")
-        use_cache = body.get("use_cache", True)
-        cache_threshold = float(body.get("cache_threshold", 0.88))
-        top_k = int(body.get("top_k", 5))
-    else:
-        # Xử lý Multipart Form Data
-        form = await request.form()
-        image_base64 = form.get("image_base64")
-        image_url = form.get("image_url")
-        object_id = form.get("object_id", "obj_01")
-        use_cache = str(form.get("use_cache", "true")).lower() in ["true", "1"]
-        cache_threshold = float(form.get("cache_threshold", 0.88))
-        top_k = int(form.get("top_k", 5))
-
-        uploaded_file = form.get("file")
-        if uploaded_file and hasattr(uploaded_file, "read"):
-            file_bytes = await uploaded_file.read()
-
-    # Nạp ảnh thành PIL Image
-    pil_image = await extract_pil_image_from_sources(
-        file_bytes=file_bytes,
-        image_base64=image_base64,
-        image_url=image_url
-    )
+    file_bytes = await file.read()
+    pil_image = await extract_pil_image_from_sources(file_bytes=file_bytes)
 
     result = await pipeline.process_image(
         image_input=pil_image,
         object_id=object_id,
-        use_cache=use_cache,
-        cache_threshold=cache_threshold,
         top_k=top_k
     )
+    return result
 
+@router.post(
+    "/match-item", 
+    summary="Tìm kiếm sản phẩm tức thời cho 1 ảnh crop (JSON Base64 hoặc Image URL cho Extension)",
+    response_model=Dict[str, Any]
+)
+async def match_single_item(
+    request: Request,
+    payload: MatchItemRequest
+):
+    """
+    Endpoint JSON phục vụ Chrome Extension:
+    - `image_base64`: Chuỗi Base64 của ảnh crop từ video player.
+    - `image_url`: URL trực tiếp của ảnh trên web.
+    """
+    pipeline = get_pipeline(request)
+    pil_image = await extract_pil_image_from_sources(
+        image_base64=payload.image_base64,
+        image_url=payload.image_url
+    )
+
+    result = await pipeline.process_image(
+        image_input=pil_image,
+        object_id=payload.object_id,
+        top_k=payload.top_k
+    )
     return result
 
 # ============================================================================

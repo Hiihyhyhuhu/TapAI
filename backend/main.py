@@ -6,17 +6,17 @@ from routes.search_routes import router as search_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Khởi tạo Pipeline Search & RAG
+    # Khởi tạo Pipeline Search cốt lõi
     print("🚀 Đang khởi động Tap AI Backend Server...")
-    app.state.search_pipeline = TapAISearchPipeline(cache_storage="./qdrant_storage")
+    app.state.search_pipeline = TapAISearchPipeline()
     print("✅ Tap AI Backend đã sẵn sàng phục vụ!\n")
     yield
     print("🛑 Đang dừng server và giải phóng tài nguyên...")
 
 app = FastAPI(
     title="Tap AI Backend API",
-    description="Interactive Shoppable Media Engine Backend (FastAPI + Meta SAM 3 + Gemini VLM + DINOv2 RAG Cache)",
-    version="1.0.0",
+    description="Interactive Shoppable Media Engine Backend (FastAPI + Gemini 3.5 Flash VLM + Serper Search + Background Worker)",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -34,11 +34,10 @@ app.include_router(search_router)
 @app.get("/health", tags=["System"])
 def health_check():
     pipeline = getattr(app.state, "search_pipeline", None)
-    cached_count = pipeline.rag_cache.count() if pipeline else 0
     return {
         "status": "healthy",
         "service": "Tap AI Backend",
-        "cached_objects_count": cached_count
+        "pipeline_ready": pipeline is not None
     }
 
 if __name__ == "__main__":

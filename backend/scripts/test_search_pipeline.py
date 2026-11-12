@@ -15,41 +15,29 @@ from services.search_pipeline import TapAISearchPipeline
 
 async def test_full_pipeline():
     print("=" * 60)
-    print("🚀 BẮT ĐẦU CHẠY TEST SEARCH & RAG PIPELINE TRONG TAP AI BACKEND")
+    print("🚀 BẮT ĐẦU CHẠY TEST CORE SEARCH PIPELINE TRONG TAP AI BACKEND")
     print("=" * 60)
 
-    pipeline = TapAISearchPipeline(cache_storage="./qdrant_storage")
+    pipeline = TapAISearchPipeline()
     sample_image = os.path.join(os.path.dirname(__file__), "test_images", "sample.jpg")
 
-    # LẦN 1: TÌM KIẾM MỚI (Cache Miss)
     print("\n" + "🔹" * 30)
-    print("▶️ LẦN CHẠY 1: TÌM KIẾM MỚI (CACHE MISS)")
+    print("▶️ CHẠY TÌM KIẾM AI CỐT LÕI: CROP -> GEMINI VLM -> SERPER -> RERANK")
     print("🔹" * 30)
-    res_1 = await pipeline.process_image(sample_image, object_id="obj_sweater_01", use_cache=True)
+    res = await pipeline.process_image(sample_image, object_id="obj_sweater_01", top_k=5)
     
-    print("\n🏆 KẾT QUẢ LẦN 1:")
-    print(f"  • Cached : {res_1['cached']} (Thời gian: {res_1['latency_ms']}ms)")
-    print(f"  • Từ khóa: {res_1['exact_query']}")
-    if res_1['products']:
-        print(f"  • Top 1  : {res_1['products'][0]['title']}")
-        print(f"    Giá    : {res_1['products'][0]['price']} | Điểm: {res_1['products'][0]['match_score']}")
-        print(f"    Lý do  : {res_1['products'][0].get('match_reason')}")
-
-    # LẦN 2: TÌM KIẾM LẶP LẠI (Cache Hit từ Qdrant)
-    print("\n" + "🔹" * 30)
-    print("▶️ LẦN CHẠY 2: TÌM KIẾM LẠI CÙNG VẬT THỂ (KỲ VỌNG CACHE HIT < 150ms)")
-    print("🔹" * 30)
-    res_2 = await pipeline.process_image(sample_image, object_id="obj_sweater_01", use_cache=True)
-
-    print("\n⚡ KẾT QUẢ LẦN 2 (RAG VECTOR DB):")
-    print(f"  • Cached : {res_2['cached']} ⚡ (Thời gian: {res_2['latency_ms']}ms)")
-    print(f"  • Tương đồng Cosine: {res_2.get('similarity_score')}")
-    if res_2['products']:
-        print(f"  • Top 1  : {res_2['products'][0]['title']}")
+    print("\n🏆 KẾT QUẢ TÌM KIẾM:")
+    print(f"  • Thời gian xử lý: {res['latency_ms']}ms")
+    print(f"  • Danh mục       : {res['detected_category']}")
+    print(f"  • Từ khóa VLM    : {res['exact_query']}")
+    if res['products']:
+        print(f"  • Top 1          : {res['products'][0]['title']}")
+        print(f"    Giá            : {res['products'][0]['price']} | Điểm: {res['products'][0]['match_score']}")
+        print(f"    Lý do          : {res['products'][0].get('match_reason')}")
 
     output_path = os.path.join(BASE_DIR, "metadata_output.json")
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(res_1, f, ensure_ascii=False, indent=2)
+        json.dump(res, f, ensure_ascii=False, indent=2)
 
     print(f"\n💾 Đã lưu kết quả hoàn chỉnh vào '{output_path}'!")
     print("🎉 Kiểm thử thành công 100%!")
