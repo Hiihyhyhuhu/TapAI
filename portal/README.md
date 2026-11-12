@@ -1,251 +1,252 @@
 # TAP AI — Direct Merchant Portal (CPC & JSON Feed Model)
 
-> **Cổng thông tin tự phục vụ (Self-Service Partner Portal) dành cho Nhà bán lẻ & Thương hiệu TMĐT hợp tác cùng hệ sinh thái Video Mua sắm Thông minh TAP AI.**
+> **Self-Service Partner Portal for E-Commerce Merchants & Brands in the TAP AI Interactive Shoppable Media Ecosystem.**
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 [![React 19](https://img.shields.io/badge/Frontend-React_19_%7C_Tailwind_CSS-blue.svg)](https://react.dev/)
-[![Model](https://img.shields.io/badge/Monetization-Direct_CPC_%26_Escrow_Wallet-emerald.svg)](#quy-trình-hệ-thống-4-giai-đoạn-portal-system-workflow)
+[![Monetization](https://img.shields.io/badge/Monetization-Direct_CPC_%26_Escrow_Wallet-emerald.svg)](#-the-4-stage-merchant-system-workflow)
 [![Specification](https://img.shields.io/badge/Standards-DOCS.md_Compliant-green.svg)](../DOCS.md)
 
 ---
 
-## 📑 Mục Lục
-1. [Giới Thiệu Tổng Quan](#-giới-thiệu-tổng-quan)
-2. [Sơ Đồ Luồng Hoạt Động (Architecture Flow)](#-sơ-đồ-luồng-hoạt-động-architecture-flow)
-3. [Quy Trình Hệ Thống 4 Giai Đoạn (Portal System Workflow)](#-quy-trình-hệ-thống-4-giai-đoạn-portal-system-workflow)
-   - [Giai đoạn 1: Onboarding, Xác minh Quyền sở hữu & Ký số Hợp đồng](#giai-đoạn-1-merchant-onboarding--e-contracting)
-   - [Giai đoạn 2: Đăng ký Sản phẩm, Đấu thầu CPC & Ví ký quỹ Escrow](#giai-đoạn-2-product-registration-cpc-bidding--escrow-funding)
-   - [Giai đoạn 3: Chuẩn hóa & Phân phối JSON Data Feed](#giai-đoạn-3-json-data-feed-export-for-core-backend)
-   - [Giai đoạn 4: Redirect Gateway, Bộ lọc Anti-Fraud & Khấu trừ Ví thời gian thực](#giai-đoạn-4-click-tracking-anti-fraud--real-time-cpc-billing)
-4. [Cấu Trúc Thư Mục `portal/`](#-cấu-trúc-thư-mục-portal)
-5. [Danh Sách API Endpoints Chính](#-danh-sách-api-endpoints-chính)
-6. [Hướng Dẫn Cài Đặt & Khởi Chạy](#-hướng-dẫn-cài-đặt--khởi-chạy)
-7. [Kiểm Thử Tự Động (E2E Automated Testing)](#-kiểm-thử-tự-động-e2e-automated-testing)
+## 📑 Table of Contents
+1. [Overview](#-overview)
+2. [System Architecture Flow](#-system-architecture-flow)
+3. [The 4-Stage Merchant System Workflow](#-the-4-stage-merchant-system-workflow)
+   - [Stage 1: Merchant Onboarding, Ownership Verification & E-Contracting](#stage-1-merchant-onboarding-ownership-verification--e-contracting)
+   - [Stage 2: Product Registration, CPC Bidding & Prepaid Escrow Wallet](#stage-2-product-registration-cpc-bidding--prepaid-escrow-wallet)
+   - [Stage 3: Standardized JSON Data Feed Export for Core Backend](#stage-3-standardized-json-data-feed-export-for-core-backend)
+   - [Stage 4: Redirect Gateway, 3-Tier Anti-Fraud Filter & Real-Time Billing](#stage-4-redirect-gateway-3-tier-anti-fraud-filter--real-time-billing)
+4. [Directory Structure (`portal/`)](#-directory-structure-portal)
+5. [Key API Endpoints](#-key-api-endpoints)
+6. [Setup & Execution Guide](#-setup--execution-guide)
+7. [Automated E2E Testing](#-automated-e2e-testing)
 
 ---
 
-## 🌟 Giới Thiệu Tổng Quan
+## 🌟 Overview
 
-Hệ thống **TAP AI Merchant Portal** giải quyết bài toán cốt lõi: Kết nối trực tiếp giữa **Nhà bán lẻ (Merchants / Brands)** và **Hệ sinh thái Video tương tác (Interactive Shoppable Media)** của TAP AI. 
+The **TAP AI Merchant Portal** establishes a direct bridge between **E-Commerce Merchants / Brands** and TAP AI's **Interactive Shoppable Media Engine**.
 
-Thay vì chỉ dựa vào mạng lưới tiếp thị liên kết (Affiliate Network) trung gian với độ trễ cao và tỷ lệ hoa hồng cố định, TAP AI triển khai mô hình **Direct CPC Bidding & Prepaid Escrow Wallet**:
-- Nhà bán hàng chủ động đấu giá CPC cho từng sản phẩm.
-- Tự động tích hợp vào các vật thể xuất hiện trong video/ảnh của người dùng.
-- Khấu trừ ngân sách minh bạch theo từng lượt nhấp hợp lệ với bộ lọc chống gian lận (Anti-Fraud) 3 tầng nghiêm ngặt.
+Rather than relying solely on third-party affiliate networks with high latency and fixed low commission rates, TAP AI introduces a high-performance **Direct CPC Bidding & Prepaid Escrow Wallet** infrastructure:
+- **Direct Merchant Control:** Brands set customized Cost-Per-Click (CPC) bids for each inventory item.
+- **Automated Media Injection:** Verified products are dynamically mapped to segmented visual objects in user videos and images.
+- **Transparent Prepaid Escrow:** Real-time atomic balance deductions only for valid high-intent clicks.
+- **Enterprise Anti-Fraud Protection:** Proprietary 3-tier click filtering safeguards merchant advertising budgets against web crawlers, duplicate spam, and bot traffic.
 
 ---
 
-## 🔄 Sơ Đồ Luồng Hoạt Động (Architecture Flow)
+## 🔄 System Architecture Flow
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
 │                             TAP AI MERCHANT PORTAL ECOSYSTEM                                │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 
- [MERCHANT / SHOP]
+ [MERCHANT / SELLER]
         │
-        ├── 1. Đăng ký & Nhận mã Bio Token (VD: VERIFY-FCAJ)
-        ├── 2. Ký Hợp đồng điện tử CPC (Xác thực OTP + Băm bảo chứng SHA-256)
-        ├── 3. Nạp tiền Ví ký quỹ trả trước (Prepaid Escrow Wallet)
-        └── 4. Đăng ký sản phẩm & Thiết lập giá thầu CPC Bid (≥ 2.000 VNĐ)
+        ├── 1. Sign up & receive Bio Verification Token (e.g., VERIFY-FCAJ)
+        ├── 2. E-Sign Digital CPC Agreement (OTP verification + SHA-256 hash logging)
+        ├── 3. Deposit funds into Prepaid Escrow Wallet
+        └── 4. Register products & configure CPC Bids (≥ 2,000 VND / click)
                     │
                     ▼
  [FASTAPI BACKEND & DATABASE]
         │
-        ├── Quản lý trạng thái Hợp đồng (`ACTIVE`)
-        ├── Kiểm soát số dư ví Escrow an toàn
-        └── Tự động kích hoạt trạng thái sản phẩm (`ELIGIBLE`)
+        ├── Manages contract lifecycle (`ACTIVE`)
+        ├── Guarantees escrow balance safety & atomic updates
+        └── Automatically triggers product eligibility (`ELIGIBLE`)
                     │
                     ▼
  [SERIALIZER JOB (FEED EXPORT)] ────────► [merchant_products_feed.json]
                                                         │
                                                         ▼
                                          [CORE AI & RANKING BACKEND]
-                                         (Đưa sản phẩm ưu tiên vào
-                                          Shoppable Media & Search)
+                                         (Boosts merchant items in
+                                          Visual Search & Shoppable Media)
                                                         │
                                                         ▼
- [END-USER / EXTENSION] ◄────────────── [CHROME EXTENSION SIDEBAR]
- (Xem video mua sắm)                     (Hiển thị thẻ sản phẩm ghim)
+ [END-USER / VIEWER] ◄───────────────── [CHROME EXTENSION SIDEBAR]
+ (Browses video content)                 (Renders interactive product card)
         │
-        ▼ (Click "Mua ngay")
+        ▼ (Clicks "Buy Now")
  [PORTAL REDIRECT GATEWAY: GET /r/{product_id}?ext_uid={user_id}]
         │
-        ├──► BỘ LỌC CHỐNG GIAN LẬN ANTI-FRAUD 3 TẦNG:
-        │     • Tầng 1: Bot / Web Crawler Detection (User-Agent)
-        │     • Tầng 2: Cửa sổ trùng lặp 30s (Duplicate Click Window)
-        │     • Tầng 3: Tần suất IP (IP Rate Limit)
+        ├──► 3-TIER ANTI-FRAUD FILTER:
+        │     • Tier 1: Bot / Web Crawler Detection (User-Agent analysis)
+        │     • Tier 2: 30-Second Duplicate Click Window
+        │     • Tier 3: IP Rate Limiting & frequency monitoring
         │
-        ├──► [Click Gian lận/Trùng]: Phí 0 VNĐ ──► Redirect ngay lập tức
-        └──► [Click Hợp lệ]: Trừ ví nguyên tử (Atomic Deduct CPC) ──► Ghi sổ cái Click Ledger
+        ├──► [Invalid / Duplicate Click]: Cost = 0 VND ──► Immediate 302 Redirect
+        └──► [Valid Unique Click]: Atomic Wallet Deduction (CPC) ──► Log to Click Ledger
                     │
                     ▼ (HTTP 302 Found)
- [TRANG ĐÍCH SẢN PHẨM TRÊN SÀN TMĐT (SHOPEE / TIKTOK SHOP / LAZADA)]
+ [DESTINATION E-COMMERCE PRODUCT PAGE (SHOPEE / TIKTOK SHOP / LAZADA)]
 ```
 
 ---
 
-## 🚀 Quy Trình Hệ Thống 4 Giai Đoạn (Portal System Workflow)
+## 🚀 The 4-Stage Merchant System Workflow
 
-Toàn bộ quy trình vận hành tuân thủ nghiêm ngặt theo đặc tả chuẩn tại [DOCS.md](../DOCS.md):
+The entire lifecycle strictly follows the architectural specifications defined in [DOCS.md](../DOCS.md):
 
-### Giai đoạn 1: Merchant Onboarding & E-Contracting
-1. **Đăng ký tài khoản:** Merchant truy cập Web Portal, đăng ký bằng Email, Mật khẩu, Tên gian hàng và URL Shop (Shopee, TikTok Shop, Lazada).
-2. **Xác thực quyền sở hữu gian hàng (Ownership Verification):**
-   - Hệ thống tự động cấp phát một mã định danh duy nhất: `VERIFY-XXXX` (ví dụ: `VERIFY-FCAJ`).
-   - Merchant gắn token này vào phần mô tả gian hàng (Shop Bio) hoặc Meta Tag.
-   - Hệ thống thực hiện xác thực để chứng minh quyền sở hữu hợp pháp trước khi cấp phép phân phối.
-3. **Sinh thỏa thuận hợp tác điện tử (Digital CPC Agreement):**
-   - Tạo văn bản hợp đồng pháp lý trực quan quy định rõ mức giá thầu CPC tối thiểu (2.000 VNĐ), nguyên tắc duy trì số dư ví ký quỹ và quy chế xử lý gian lận click.
-4. **Ký số bảo chứng toàn vẹn (E-Signature):**
-   - Merchant nhập mã xác thực OTP gửi qua email/SMS để ký số.
-   - Hệ thống tạo hàm băm mật mã SHA-256 từ nội dung hợp đồng, mốc thời gian và danh tính để chống chối bỏ theo Luật Giao dịch Điện tử.
-   - Trạng thái hợp đồng chuyển thành **`ACTIVE`**, mở khóa quyền đăng ký sản phẩm và tạo chiến dịch.
-
----
-
-### Giai đoạn 2: Product Registration, CPC Bidding & Escrow Funding
-1. **Đăng ký sản phẩm:** Hỗ trợ nhập thủ công, tải lên hàng loạt (CSV/JSON), hoặc phân tích tự động dữ liệu qua OpenGraph từ đường dẫn sản phẩm.
-2. **Thiết lập giá thầu CPC Bidding:**
-   - Merchant đặt mức chi trả cam kết cho mỗi lượt nhấp: `cpc_bid` (Tối thiểu 2.000 VNĐ/click).
-   - Thiết lập hạn mức chi tiêu mỗi ngày (`daily_budget`) nhằm tránh cạn kiệt ngân sách đột ngột trong các đợt bùng nổ lưu lượng.
-3. **Nạp tiền vào Ví ký quỹ trả trước (Prepaid Escrow Wallet):**
-   - Merchant nạp ngân sách vào ví trả trước thông qua cổng chuyển khoản / đối soát tự động.
-4. **Kích hoạt tự động (Auto-Activation):**
-   - Khi hợp đồng ở trạng thái `ACTIVE` và số dư ví $\ge$ mức CPC tối thiểu, sản phẩm tự động chuyển sang trạng thái **`ELIGIBLE`** (Sẵn sàng xuất Feed dữ liệu).
-   - Khi số dư ví về 0 VNĐ, sản phẩm sẽ tự động chuyển sang trạng thái an toàn **`PAUSED_NO_BUDGET`** để bảo vệ tài khoản của Merchant.
+### Stage 1: Merchant Onboarding, Ownership Verification & E-Contracting
+1. **Self-Service Registration:** The merchant accesses the portal, enters their business credentials, email, password, and primary storefront URL (Shopee, TikTok Shop, or Lazada).
+2. **Storefront Ownership Verification:**
+   - The system generates a cryptographically unique verification token: `VERIFY-XXXX` (e.g., `VERIFY-FCAJ`).
+   - The merchant places this token into their official Shop Bio or website meta tag.
+   - The verification engine confirms store ownership to prevent fraudulent claims before authorizing distribution.
+3. **Digital CPC Agreement Generation:**
+   - The platform creates a standardized legal agreement specifying the baseline CPC rate (minimum 2,000 VND), escrow balance maintenance rules, and click fraud policies.
+4. **Non-Repudiation E-Signature:**
+   - The merchant verifies and signs the agreement using a secure one-time password (OTP) sent to their registered contact.
+   - The system computes and logs an immutable SHA-256 cryptographic hash containing the contract body, timestamp, and party identities.
+   - The contract transitions to **`ACTIVE`**, unlocking product registration and bidding campaigns.
 
 ---
 
-### Giai đoạn 3: JSON Data Feed Export for Core Backend
-1. **Serializer Job định kỳ / theo yêu cầu:**
-   - Backend lọc toàn bộ sản phẩm thỏa mãn điều kiện nghiêm ngặt:
+### Stage 2: Product Registration, CPC Bidding & Prepaid Escrow Wallet
+1. **Product Ingestion:** Supports single-item manual creation, bulk upload (CSV/JSON), and automated OpenGraph metadata scraping from product URLs.
+2. **CPC Bidding & Budget Caps:**
+   - Merchants set their committed Cost-Per-Click: `cpc_bid` (minimum 2,000 VND/click).
+   - Optional `daily_budget` limits prevent rapid budget exhaustion during unexpected viral traffic spikes.
+3. **Prepaid Escrow Wallet Funding:**
+   - Merchants maintain an active prepaid balance via bank transfer or automated top-up.
+4. **Automated Eligibility Transition:**
+   - When the contract is `ACTIVE` and the wallet balance $\ge$ minimum CPC, product status automatically transitions to **`ELIGIBLE`** (ready for feed serialization).
+   - If the escrow balance drops to 0 VND, product status automatically shifts to safe **`PAUSED_NO_BUDGET`** to prevent overdrafts.
+
+---
+
+### Stage 3: Standardized JSON Data Feed Export for Core Backend
+1. **Periodic & On-Demand Serializer Jobs:**
+   - The backend queries all products satisfying strict validation criteria:
      $$\text{Contract} = \text{ACTIVE} \quad\land\quad \text{Wallet\_Balance} \ge \text{Min\_CPC} \quad\land\quad \text{Product\_Status} = \text{ELIGIBLE}$$
-2. **Đóng gói chuẩn hóa `merchant_products_feed.json`:**
-   - Cấu trúc bản ghi JSON bao gồm: `product_id`, `shop_id`, `shop_name`, `title`, `price`, `affiliate_url`, `cpc_bid`, `status`, `contract_status`, `updated_at`.
-3. **Phân phối sang Core AI Pipeline:**
-   - Feed dữ liệu được nạp vào thuật toán chấm điểm và xếp hạng (Ranking Engine) của TAP AI, giúp sản phẩm của Merchant được ưu tiên hiển thị hàng đầu trong danh mục nhận diện đồ họa của video.
+2. **Standardized Feed Packaging (`merchant_products_feed.json`):**
+   - Each payload record encapsulates: `product_id`, `shop_id`, `shop_name`, `title`, `price`, `affiliate_url`, `cpc_bid`, `status`, `contract_status`, and `updated_at`.
+3. **Dispatch to Core AI Ranking Engine:**
+   - The standardized feed is transmitted to TAP AI's Core Search & Ranking Pipeline, boosting merchant products to top priority within the visual detection overlays and extension side panel.
 
 ---
 
-### Giai đoạn 4: Click Tracking, Anti-Fraud & Real-Time CPC Billing
-1. **Lưu lượng nhấp từ người dùng:**
-   - Khi người xem video click vào thẻ sản phẩm hiển thị trên Extension Sidebar, yêu cầu được điều hướng qua cổng Gateway:
+### Stage 4: Redirect Gateway, 3-Tier Anti-Fraud Filter & Real-Time Billing
+1. **Extension Inbound Traffic:**
+   - When a video viewer clicks a pinned product card on the Chrome Extension sidebar, the request hits the dedicated gateway:
      ```http
      GET https://portal.domain.com/r/{product_id}?ext_uid={user_id}
      ```
-2. **Bộ lọc chống gian lận Anti-Fraud 3 tầng độc quyền:**
-   - **Tầng 1 (Bot Detection):** Phân tích chuỗi `User-Agent` nhằm chặn đứng các crawler, spider, script bot tự động (chỉ chấp nhận lưu lượng từ trình duyệt thật).
-   - **Tầng 2 (Duplicate Click Window):** Khóa cửa sổ trùng lặp 30 giây đối với cùng một người dùng (`ext_uid`) hoặc cùng IP trên cùng một sản phẩm.
-   - **Tầng 3 (IP Rate Limit):** Ngăn chặn hành vi dồn dập nhấp phá hoại từ một địa chỉ mạng.
-3. **Cơ chế tính cước minh bạch (Real-time Billing):**
-   - **Click gian lận / Trùng lặp:** Ghi log cảnh báo `FRAUD`, tính phí **0 VNĐ**, lập tức điều hướng khách đến link sản phẩm để không gián đoạn trải nghiệm mua hàng.
-   - **Click hợp lệ (Valid Unique Click):** 
-     - Ghi nhận `VALID` vào Sổ cái Click Ledger cùng ảnh chụp giá thầu `committed_cpc_at_click`.
-     - Thực hiện trừ tiền nguyên tử (Atomic Deduction) khỏi số dư ví ký quỹ của Shop.
-4. **Điều hướng khách hàng:** Hệ thống phản hồi mã `HTTP 302 Found`, chuyển hướng người dùng an toàn đến trang sản phẩm gốc trên Shopee/TikTok Shop.
+2. **Proprietary 3-Tier Anti-Fraud Validation:**
+   - **Tier 1 (Bot Detection):** Inspects incoming `User-Agent` headers to block automated crawlers, spiders, and scrapers (only genuine browser clients pass).
+   - **Tier 2 (Duplicate Click Window):** Imposes a 30-second deduplication window for identical user IDs (`ext_uid`) or IP addresses on the same item.
+   - **Tier 3 (IP Rate Limiting):** Restricts burst click frequencies from single IP subnets to prevent click bombing attacks.
+3. **Transparent Real-Time Billing:**
+   - **Fraudulent / Duplicate Clicks:** Flagged as `FRAUD`, billed at **0 VND**, and immediately redirected to prevent disruption to end-user shopping.
+   - **Valid Unique Clicks:** 
+     - Recorded as `VALID` in the Click Ledger with a frozen `committed_cpc_at_click` snapshot.
+     - Atomically deducted from the merchant's prepaid escrow balance.
+4. **Shopper Redirection:** The server responds with `HTTP 302 Found`, routing the user directly to the product checkout page on the host marketplace.
 
 ---
 
-## 📁 Cấu Trúc Thư Mục `TapAI/portal/`
+## 📁 Directory Structure (`portal/`)
 
 ```text
 TapAI/portal/
-├── index.html                   # Entrypoint HTML cho Vite React App
-├── index.standalone.html        # Giao diện Portal hoàn chỉnh (Single File, chạy trực tiếp mọi nơi)
-├── package.json                 # Cấu hình dự án (React 19, Vite, Tailwind CSS, TypeScript)
-├── vite.config.ts               # Proxy chuyển tiếp API `/api/v1` về backend localhost:8000
-├── tailwind.config.js           # Bảng màu sắc & kiểu chữ tối ưu cho Dark Theme E-Commerce
-├── tsconfig.json                # Cấu hình TypeScript compiler
+├── index.html                   # Entrypoint HTML for Vite React App
+├── index.standalone.html        # Complete standalone Single-Page Application (Zero-dependency, runs directly in any browser)
+├── package.json                 # Project configuration (React 19, Vite, Tailwind CSS, TypeScript)
+├── vite.config.ts               # API reverse proxy configuration forwarding `/api/v1` to backend localhost:8000
+├── tailwind.config.js           # E-Commerce Dark Theme palette & typography configurations
+├── tsconfig.json                # TypeScript compiler settings
 ├── src/
-│   ├── main.tsx                 # Điểm mount React DOM gốc
-│   ├── App.tsx                  # Bộ điều phối trạng thái Shop, Auth, Tab Switcher & Demo Login
-│   ├── index.css                # CSS styles & Typography font chữ
+│   ├── main.tsx                 # React DOM root mounting point
+│   ├── App.tsx                  # Root state controller (Shop context, Auth, Tab Switcher, Demo login)
+│   ├── index.css                # Global Tailwind directives & font imports
 │   ├── types/
-│   │   └── index.ts             # TypeScript interfaces (Shop, Product, Feed, ClickLedger, Verification)
+│   │   └── index.ts             # TypeScript definitions (Shop, Product, Feed, ClickLedger, Verification)
 │   ├── services/
-│   │   └── api.ts               # API Client tương tác với toàn bộ 29 endpoints của Backend FastAPI
+│   │   └── api.ts               # Type-safe API Client connecting to 29 FastAPI endpoints
 │   └── components/
-│       ├── Navbar.tsx           # Thanh điều hướng, Trạng thái Hợp đồng, Số dư ví & Nút Đăng nhập/Đăng xuất
-│       ├── DashboardTab.tsx     # Báo cáo biểu đồ Clicks, Doanh thu CPC, Số dư ví ký quỹ & Lịch sử
-│       ├── ProductsTab.tsx      # Quản lý danh mục, thiết lập CPC Bid, nạp Feed JSON & lọc trạng thái
-│       ├── VerificationTab.tsx  # Xác thực quyền sở hữu Bio Token & Ký số Hợp đồng điện tử bằng OTP
-│       ├── ReconciliationTab.tsx# Chi tiết Sổ cái Click Ledger & Quản lý nạp/rút Ví ký quỹ Escrow
-│       └── AuthModal.tsx        # Cửa sổ Đăng ký, Đăng nhập và Khôi phục mật khẩu gian hàng
+│       ├── Navbar.tsx           # Global navigation bar (Contract badge, Wallet balance, Auth buttons)
+│       ├── DashboardTab.tsx     # KPI statistics, 7-day click/revenue charts, top products breakdown
+│       ├── ProductsTab.tsx      # Inventory management, CPC bidding controls, JSON feed import & status filters
+│       ├── VerificationTab.tsx  # Bio Token verification & OTP E-Signature interface
+│       ├── ReconciliationTab.tsx# Real-time Click Ledger audit table & Escrow wallet deposit history
+│       └── AuthModal.tsx        # Merchant registration, sign-in, and password reset modal
 ```
 
 ---
 
-## 🌐 Danh Sách API Endpoints Chính
+## 🌐 Key API Endpoints
 
-Tất cả các API được bảo mật bằng tiêu chuẩn Bearer JWT Authentication:
+All endpoints are secured via industry-standard Bearer JWT Authentication:
 
-| Giai đoạn | Phương thức | Endpoint | Mô tả |
+| Lifecycle Stage | HTTP Method | Endpoint | Description |
 | :--- | :--- | :--- | :--- |
-| **Auth** | `POST` | `/api/v1/auth/register` | Đăng ký tài khoản gian hàng mới |
-| **Auth** | `POST` | `/api/v1/auth/login` | Đăng nhập nhận JWT Access & Refresh Token |
-| **Stage 1** | `GET` | `/api/v1/shops/contract` | Xem văn bản thỏa thuận hợp tác CPC |
-| **Stage 1** | `POST` | `/api/v1/shops/ownership/verify` | Xác thực quyền sở hữu qua Bio Token `VERIFY-XXXX` |
-| **Stage 1** | `POST` | `/api/v1/shops/contract/sign` | Ký số hợp đồng bằng OTP & lưu hash SHA-256 |
-| **Stage 2** | `GET` | `/api/v1/shops/wallet` | Xem số dư Ví ký quỹ trả trước Escrow |
-| **Stage 2** | `POST` | `/api/v1/shops/wallet/deposit` | Nạp tiền vào ví ký quỹ Escrow |
-| **Stage 2** | `POST` | `/api/v1/products` | Đăng ký sản phẩm mới & đặt giá thầu CPC |
-| **Stage 2** | `PUT` | `/api/v1/products/{id}/bidding` | Cập nhật giá thầu CPC Bid & Daily Budget Cap |
-| **Stage 3** | `GET` | `/api/v1/products/feed/export` | Tải về tệp `merchant_products_feed.json` chuẩn hóa |
-| **Stage 3** | `POST` | `/api/v1/products/feed/dispatch` | Kích hoạt Serializer Job đẩy feed sang Core Backend |
-| **Stage 4** | `GET` | `/r/{product_id}` | Redirect Gateway xử lý nhấp chuột & Anti-Fraud |
-| **Stage 4** | `GET` | `/api/v1/tracking/ledger` | Truy xuất Sổ cái đối soát Click Ledger thời gian thực |
-| **Report** | `GET` | `/api/v1/reports/daily` | Báo cáo chuỗi thời gian phân tích Clicks & Doanh thu CPC |
+| **Auth** | `POST` | `/api/v1/auth/register` | Register a new merchant storefront account |
+| **Auth** | `POST` | `/api/v1/auth/login` | Authenticate merchant and issue JWT tokens |
+| **Stage 1** | `GET` | `/api/v1/shops/contract` | Retrieve Digital CPC Agreement terms and status |
+| **Stage 1** | `POST` | `/api/v1/shops/ownership/verify` | Verify storefront ownership via Bio Token (`VERIFY-XXXX`) |
+| **Stage 1** | `POST` | `/api/v1/shops/contract/sign` | Sign agreement via OTP and record SHA-256 hash |
+| **Stage 2** | `GET` | `/api/v1/shops/wallet` | Query Prepaid Escrow Wallet balance and spend metrics |
+| **Stage 2** | `POST` | `/api/v1/shops/wallet/deposit` | Deposit funds into Prepaid Escrow Wallet |
+| **Stage 2** | `POST` | `/api/v1/products` | Register product and establish initial CPC bid |
+| **Stage 2** | `PUT` | `/api/v1/products/{id}/bidding` | Update item `cpc_bid` and `daily_budget` |
+| **Stage 3** | `GET` | `/api/v1/products/feed/export` | Download serialized `merchant_products_feed.json` |
+| **Stage 3** | `POST` | `/api/v1/products/feed/dispatch` | Trigger Serializer Job to push feed to Core Backend |
+| **Stage 4** | `GET` | `/r/{product_id}` | Dedicated Redirect Gateway with 3-tier Anti-Fraud |
+| **Stage 4** | `GET` | `/api/v1/tracking/ledger` | Query immutable real-time Click Ledger records |
+| **Report** | `GET` | `/api/v1/reports/daily` | Fetch time-series analytical reports (Clicks & CPC Spend) |
 
 ---
 
-## 💻 Hướng Dẫn Cài Đặt & Khởi Chạy
+## 💻 Setup & Execution Guide
 
-### Cách 1: Sử dụng Bản Standalone Trực Tiếp (Khuyên dùng)
-Giao diện `index.standalone.html` tích hợp sẵn toàn bộ CSS, biểu đồ Chart.js và logic kết nối API mà không yêu cầu cài đặt môi trường Node.js.
+### Option 1: Standalone Single-Page Application (Recommended)
+`index.standalone.html` bundles full CSS styling, Chart.js telemetry, and REST API connectivity without requiring a Node.js runtime.
 
-1. **Khởi động Backend FastAPI:**
+1. **Start the FastAPI Unified Backend:**
    ```powershell
    cd c:\Users\LENOVO\TapAI\backend
    & "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" -m uvicorn main:app --reload --port 8000
    ```
-2. **Khởi chạy Web Portal:**
-   Từ thư mục gốc `TapAI/`:
+2. **Launch the Merchant Portal:**
+   From the repository root (`TapAI/`):
    ```powershell
    & "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" run_portal.py
    ```
-   *Trình duyệt sẽ tự động mở trang:* `http://localhost:8000/portal/index.standalone.html`
+   *Your default browser will open automatically at:* `http://localhost:8000/portal/index.standalone.html`
 
-3. **Tài khoản dùng thử (Demo Account):**
+3. **Pre-configured Demo Credentials:**
    - **Email:** `demo@tapai.vn`
-   - **Mật khẩu:** `123456`
-   - **Mã OTP ký hợp đồng:** `123456`
-   - *Tài khoản đã có sẵn 2.000.000 ₫ trong ví Escrow để kiểm thử ngay lập tức.*
+   - **Password:** `123456`
+   - **Contract Signing OTP:** `123456`
+   - *Preloaded with a 2,000,000 VND escrow wallet balance for instant testing.*
 
 ---
 
-### Cách 2: Phát Triển Với Node.js & Vite Dev Server
-Dành cho lập trình viên muốn mở rộng các thành phần React Component:
+### Option 2: Development with Node.js & Vite Dev Server
+For developers looking to customize or extend the modular React components:
 
 ```powershell
 cd c:\Users\LENOVO\TapAI\portal
 npm install
 npm run dev
 ```
-Truy cập giao diện lập trình tại: `http://localhost:5173`
+Access the hot-reloading development server at: `http://localhost:5173`
 
 ---
 
-## 🧪 Kiểm Thử Tự Động (E2E Automated Testing)
+## 🧪 Automated E2E Testing
 
-Dự án cung cấp bộ kịch bản kiểm thử tích hợp toàn diện [test_portal_cpc_workflow.py](../test_portal_cpc_workflow.py) để xác thực tính toàn vẹn của cả 4 giai đoạn:
+The repository provides a complete end-to-end integration test script [test_portal_cpc_workflow.py](../test_portal_cpc_workflow.py) to validate all 4 stages against live endpoints:
 
 ```powershell
 & "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" test_portal_cpc_workflow.py
 ```
 
-**Kết quả kiểm thử tiêu chuẩn:**
-- ✅ **Stage 1:** Ký số hợp đồng điện tử & tạo mã băm SHA-256 thành công.
-- ✅ **Stage 2:** Nạp ví ký quỹ Escrow, đăng ký sản phẩm, thiết lập giá thầu CPC và kiểm tra trạng thái kích hoạt tự động.
-- ✅ **Stage 3:** Xuất bản và xác thực định dạng dữ liệu `merchant_products_feed.json`.
-- ✅ **Stage 4:** Kiểm tra Redirect Gateway, bộ lọc Bot/Crawler, bộ lọc Duplicate Click Window và khấu trừ chính xác ngân sách vào Sổ cái Click Ledger.
+**Standard Validation Output:**
+- ✅ **Stage 1:** Ownership verification verified, legal contract generated, and signed with SHA-256 hash.
+- ✅ **Stage 2:** Escrow wallet funded, product registered, CPC bid adjusted, and auto-activation confirmed.
+- ✅ **Stage 3:** Standardized `merchant_products_feed.json` serialized and dispatched to Core AI.
+- ✅ **Stage 4:** Redirect Gateway tested: valid click deducted exactly `cpc_bid`, while bot and duplicate clicks $(<30s)$ were safely intercepted at 0 VND and audited in the Click Ledger.
