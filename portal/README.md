@@ -202,20 +202,22 @@ All endpoints are secured via industry-standard Bearer JWT Authentication:
 
 ## 💻 Setup & Execution Guide
 
-### Option 1: Standalone Single-Page Application (Recommended)
-`index.standalone.html` bundles full CSS styling, Chart.js telemetry, and REST API connectivity without requiring a Node.js runtime.
+### Option 1: Standalone Web Interface (Quickstart - No Node.js Required)
+`index.standalone.html` bundles the complete UI, Tailwind CSS styling, Chart.js telemetry, and REST API connectivity out-of-the-box.
 
 1. **Start the FastAPI Unified Backend:**
-   ```powershell
-   cd c:\Users\LENOVO\TapAI\backend
-   & "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" -m uvicorn main:app --reload --port 8000
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn main:app --reload --port 8000
    ```
-2. **Launch the Merchant Portal:**
-   From the repository root (`TapAI/`):
-   ```powershell
-   & "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" run_portal.py
+   *The backend serves both REST APIs and the static portal application.*
+
+2. **Access the Merchant Portal:**
+   Open your web browser and navigate directly to:
+   ```text
+   http://localhost:8000/portal/index.standalone.html
    ```
-   *Your default browser will open automatically at:* `http://localhost:8000/portal/index.standalone.html`
 
 3. **Pre-configured Demo Credentials:**
    - **Email:** `demo@tapai.vn`
@@ -226,10 +228,10 @@ All endpoints are secured via industry-standard Bearer JWT Authentication:
 ---
 
 ### Option 2: Development with Node.js & Vite Dev Server
-For developers looking to customize or extend the modular React components:
+For developers looking to customize or build upon the modular React components:
 
-```powershell
-cd c:\Users\LENOVO\TapAI\portal
+```bash
+cd portal
 npm install
 npm run dev
 ```
@@ -239,14 +241,14 @@ Access the hot-reloading development server at: `http://localhost:5173`
 
 ## 🧪 Automated E2E Testing
 
-The repository provides a complete end-to-end integration test script [test_portal_cpc_workflow.py](../test_portal_cpc_workflow.py) to validate all 4 stages against live endpoints:
+The repository includes a comprehensive integration test suite to validate all 4 stages of the CPC & Escrow workflow against live backend endpoints:
 
-```powershell
-& "C:\Users\LENOVO\AppData\Local\Programs\Python\Python312\python.exe" test_portal_cpc_workflow.py
+```bash
+python backend/scripts/test_portal_cpc_workflow.py
 ```
 
 **Standard Validation Output:**
-- ✅ **Stage 1:** Ownership verification verified, legal contract generated, and signed with SHA-256 hash.
+- ✅ **Stage 1:** Storefront ownership verified, legal agreement generated, and signed with SHA-256 hash.
 - ✅ **Stage 2:** Escrow wallet funded, product registered, CPC bid adjusted, and auto-activation confirmed.
 - ✅ **Stage 3:** Standardized `merchant_products_feed.json` serialized and dispatched to Core AI.
 - ✅ **Stage 4:** Redirect Gateway tested: valid click deducted exactly `cpc_bid`, while bot and duplicate clicks $(<30s)$ were safely intercepted at 0 VND and audited in the Click Ledger.

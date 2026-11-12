@@ -75,11 +75,19 @@ def import_product_by_url(
             db.add(m_owner)
             db.flush()
 
+        raw_plat_shop_id = item_data.get("platform_shop_id") or f"shop_{shop_id[:8]}"
+        existing_plat_shop = db.query(MerchantShop).filter(
+            MerchantShop.platform == platform,
+            MerchantShop.platform_shop_id == raw_plat_shop_id
+        ).first()
+        if existing_plat_shop and existing_plat_shop.id != shop_id:
+            raw_plat_shop_id = f"{raw_plat_shop_id}_{shop_id[:8]}"
+
         m_shop = MerchantShop(
             id=shop_id,
             merchant_id=m_owner.id,
             platform=platform,
-            platform_shop_id=item_data.get("platform_shop_id") or "shop_auto",
+            platform_shop_id=raw_plat_shop_id,
             shop_name=legacy_shop.shop_name if legacy_shop else "Auto Shop",
             shop_url=legacy_shop.shop_url if legacy_shop else clean_url,
             is_verified=True

@@ -156,13 +156,12 @@ TAP AI is developed as an **Open-Source** project.
    * Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 2. **Access the Merchant Portal:**
-   * Open directly in browser: [http://localhost:8000/portal/index.standalone.html](http://localhost:8000/portal/index.standalone.html)
-   * Or run with Python launcher: `python run_portal.py`
+   * Open directly in any browser: [http://localhost:8000/portal/index.standalone.html](http://localhost:8000/portal/index.standalone.html)
    * Demo Credentials: `demo@tapai.vn` / `123456` (OTP: `123456`)
 
 3. **Run Automated E2E Workflow Test:**
    ```bash
-   python test_portal_cpc_workflow.py
+   python backend/scripts/test_portal_cpc_workflow.py
    ```
 
 ---

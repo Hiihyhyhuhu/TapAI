@@ -396,7 +396,7 @@
         return await res.json();
       } catch (err) {
         if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('Failed'))) {
-          throw new Error('Không thể kết nối đến máy chủ backend (http://localhost:8000). Vui lòng chạy lệnh: python run_portal.py');
+          throw new Error('Không thể kết nối đến máy chủ backend (http://localhost:8000). Vui lòng khởi động backend (cd backend && uvicorn main:app --port 8000).');
         }
         throw err;
       }

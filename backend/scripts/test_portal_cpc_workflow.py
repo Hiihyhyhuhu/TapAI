@@ -3,20 +3,28 @@ import os
 import requests
 import json
 
-sys.path.insert(0, os.path.abspath("backend"))
+# Ensure backend root is on sys.path dynamically
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
 
 from database.connection import SessionLocal
 from database.models import Shop, AffiliateProduct
 from services.auth_service import create_access_token
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 def run_tests():
     print("=== STARTING FULL E2E CPC WORKFLOW TEST ALIGNED WITH DOCS.MD ===")
     db = SessionLocal()
-    shop = db.query(Shop).filter(Shop.email == "doananhphuong075@gmail.com").first()
+    shop = db.query(Shop).filter(Shop.email == "demo@tapai.vn").first()
     if not shop:
-        print("[FAIL] Shop doananhphuong075@gmail.com not found in DB!")
+        shop = db.query(Shop).filter(Shop.email == "doananhphuong075@gmail.com").first()
+    if not shop:
+        shop = db.query(Shop).first()
+    if not shop:
+        print("[FAIL] No Shop found in database! Please register or seed a demo shop first.")
         return False
     
     print(f"[INIT] Found Shop: id={shop.id}, name={shop.shop_name}, email={shop.email}")
