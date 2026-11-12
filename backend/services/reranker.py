@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
 from models.search_schemas import EcomSearchQuery, ProductCandidate
+from services.seasonality import SeasonalityEngine
 
 load_dotenv()
 
@@ -43,12 +44,38 @@ class MultimodalReranker:
             pass
         return None
 
+    @staticmethod
+    def calculate_ranking_score(
+        similarity_score: float,
+        commission_rate: float = 0.05,
+        A: float = 0.75,
+        B: float = 0.10,
+        min_gate: float = 0.60
+    ) -> float:
+        """
+        Tính điểm xếp hạng tổng hợp cân bằng theo biên Pareto (Optuna):
+        Total_score = A * similarity_score + B * norm_commission
+        - Nếu similarity < min_gate (0.60): Phạt điểm nặng để không bao giờ lọt vào Top 1.
+        - Chuẩn hóa commission_rate từ [0.01, 0.25] về [0.0, 1.0].
+        """
+        if similarity_score < min_gate:
+            return round(similarity_score * 0.5, 4)
+
+        norm_comm = (commission_rate - 0.01) / (0.25 - 0.01)
+        norm_comm = max(0.0, min(1.0, norm_comm))
+
+        total = (A * similarity_score) + (B * norm_comm)
+        return round(total, 4)
+
     async def rerank(
         self,
         crop_image_path: str,
         query_obj: EcomSearchQuery,
         candidates: List[ProductCandidate],
-        top_k: int = 5
+        top_k: int = 5,
+        weight_visual: Optional[float] = None,
+        weight_commission: Optional[float] = None,
+        min_similarity_gate: Optional[float] = None
     ) -> List[ProductCandidate]:
         """
         Dùng Vision-LLM (Gemini) trực tiếp đối chiếu ảnh crop gốc với ảnh sản phẩm sàn:
@@ -66,7 +93,8 @@ class MultimodalReranker:
             tasks = [self._download_image(client, c.thumbnail_url) for c in candidates]
             downloaded_imgs = await asyncio.gather(*tasks)
 
-        target_img = Image.open(crop_image_path).convert("RGB")
+        with Image.open(crop_image_path) as target_file:
+            target_img = target_file.convert("RGB")
 
         # 2. Xây dựng prompt đa phương thức gửi cho VLM
         contents = [
@@ -88,38 +116,65 @@ class MultimodalReranker:
             "   - 0.00 - 0.39: Khác kiểu dáng (VD: áo cardigan thay vì áo khóa kéo, sọc caro thay vì sọc ngang).\n"
         ]
 
+        valid_candidate_ids = set()
         for idx, (cand, img) in enumerate(zip(candidates, downloaded_imgs), 1):
             if img is not None:
                 contents.append(f"\n--- [Ứng viên #{idx}] Item ID: {cand.item_id} ---")
                 contents.append(f"Tiêu đề: {cand.title}")
                 contents.append(img)
+                valid_candidate_ids.add(cand.item_id)
             else:
                 cand.match_score = 0.0
                 cand.match_reason = "Không tải được ảnh sản phẩm để thẩm định."
 
-        # 3. Gọi Gemini VLM để thẩm định và chấm điểm
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=RerankOutput,
-                    temperature=0.1,
-                ),
+        # 3. Gọi Gemini VLM để thẩm định và chấm điểm (chỉ gọi nếu có ít nhất 1 ảnh ứng viên hợp lệ)
+        if valid_candidate_ids:
+            try:
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=self.model_name,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=RerankOutput,
+                        temperature=0.1,
+                    ),
+                )
+                vlm_eval = RerankOutput.model_validate_json(response.text)
+                eval_map = {item.item_id: item for item in vlm_eval.evaluations}
+
+                for cand in candidates:
+                    if cand.item_id in eval_map:
+                        ev = eval_map[cand.item_id]
+                        clamped_score = max(0.0, min(1.0, ev.match_score))
+                        cand.match_score = round(clamped_score, 4)
+                        cand.match_reason = ev.reason
+
+            except Exception as e:
+                print(f"⚠️ Lỗi trong quá trình VLM Reranking: {e}")
+
+        # 4. Tự động nhận diện trọng số theo mùa (Auto-Seasonality) nếu không chỉ định thủ công
+        season_profile = SeasonalityEngine.get_weights()
+        w_visual = weight_visual if weight_visual is not None else season_profile["A"]
+        w_comm = weight_commission if weight_commission is not None else season_profile["B"]
+        w_gate = min_similarity_gate if min_similarity_gate is not None else season_profile["min_gate"]
+
+        print(f"🎯 [AUTO-SEASONALITY] Áp dụng profile '{season_profile['campaign_key']}': A={w_visual}, B={w_comm}, Gate={w_gate} ({season_profile['name']})")
+
+        # 5. Tính điểm xếp hạng kết hợp (Multi-objective Pareto Ranking)
+        for cand in candidates:
+            cand.ranking_score = self.calculate_ranking_score(
+                similarity_score=cand.match_score or 0.0,
+                commission_rate=getattr(cand, "commission_rate", 0.05) or 0.05,
+                A=w_visual,
+                B=w_comm,
+                min_gate=w_gate
             )
-            vlm_eval = RerankOutput.model_validate_json(response.text)
-            eval_map = {item.item_id: item for item in vlm_eval.evaluations}
 
-            for cand in candidates:
-                if cand.item_id in eval_map:
-                    ev = eval_map[cand.item_id]
-                    cand.match_score = round(ev.match_score, 4)
-                    cand.match_reason = ev.reason
-
-        except Exception as e:
-            print(f"⚠️ Lỗi trong quá trình VLM Reranking: {e}")
-
-        # 4. Sắp xếp giảm dần theo match_score
-        ranked = sorted(candidates, key=lambda x: x.match_score or 0.0, reverse=True)
+        # 6. Sắp xếp giảm dần theo ranking_score (hoặc match_score dự phòng)
+        ranked = sorted(
+            candidates, 
+            key=lambda x: (x.ranking_score if x.ranking_score is not None else (x.match_score or 0.0)), 
+            reverse=True
+        )
         return ranked[:top_k]

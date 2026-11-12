@@ -1,0 +1,321 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-10-31T16:39:56.203413",
+  "media_info": {
+    "media_id": "vid_tiktok_fashion_01",
+    "media_type": "video",
+    "duration_sec": 12.5,
+    "fps": 30.0,
+    "resolution": [
+      1080,
+      1920
+    ]
+  },
+  "objects": {
+    "obj_sweater_01": {
+      "object_id": "obj_sweater_01",
+      "label": "Áo len cổ bẻ khóa kéo",
+      "category": "Thời trang nữ > Áo len & Cardigan > Áo len",
+      "crop_image_url": "https://raw.githubusercontent.com/TapAI/assets/main/crops/crop_sweater_01.jpg",
+      "primary_color": "trắng phối sọc đen đỏ",
+      "matched_products": [
+        {
+          "item_id": "sp_01",
+          "title": "Áo len dệt kim khóa kéo cổ điển - Áo len sọc tương phản tay dài màu đỏ và xám than",
+          "price": "686.000₫",
+          "platform": "Shopee Mall",
+          "product_url": "https://shopee.vn/ao-len-khoa-keo-co-dien-sp01",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.95,
+          "commission_rate": 0.15,
+          "ranking_score": 0.771,
+          "match_reason": "Trùng khớp 95% về kiểu áo len tay dài, cổ bẻ khóa kéo cùng họa tiết sọc ngang đỏ đen."
+        },
+        {
+          "item_id": "sp_02",
+          "title": "Áo Len Nam Nữ Dài Tay Cổ Polo Khóa Kéo Kẻ Ngang Phong Cách Hàn Quốc",
+          "price": "459.000₫",
+          "platform": "Shopee Mall",
+          "product_url": "https://shopee.vn/ao-len-polo-khoa-keo-sp02",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-mfrza55s1z4f4b",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.92,
+          "commission_rate": 0.18,
+          "ranking_score": 0.761,
+          "match_reason": "Dáng áo len cổ bẻ khóa zip kẻ sọc ngang tương tự 92%."
+        },
+        {
+          "item_id": "sp_03",
+          "title": "Áo len nữ dệt kim form rộng sọc ngang đỏ trắng cổ bẻ khóa zip retro",
+          "price": "320.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/ao-len-zip-retro-sp03",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/vn-11134201-81ztc-mukhhnp7ry0we4",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.9,
+          "commission_rate": 0.08,
+          "ranking_score": 0.704,
+          "match_reason": "Họa tiết sọc ngang và khóa zip giống mẫu, form rộng hơn nhẹ."
+        },
+        {
+          "item_id": "sp_04",
+          "title": "Áo len dệt kim khóa kéo sọc ngang phối màu unisex Quảng Châu cao cấp",
+          "price": "389.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/ao-len-quang-chau-sp04",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-mhg194jfqjgja4",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.88,
+          "commission_rate": 0.1,
+          "ranking_score": 0.698,
+          "match_reason": "Cùng thiết kế khóa cổ zip dệt kim kẻ sọc."
+        },
+        {
+          "item_id": "sp_05",
+          "title": "Áo sweater len cổ kéo khóa sọc ngang đỏ đen phong cách vintage",
+          "price": "299.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/ao-sweater-vintage-sp05",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.85,
+          "commission_rate": 0.05,
+          "ranking_score": 0.654,
+          "match_reason": "Dáng áo len cổ khóa kéo cùng tone màu vintage."
+        },
+        {
+          "item_id": "sp_06",
+          "title": "Áo len polo dệt kim sọc to bản khóa zip ngực",
+          "price": "285.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp06",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.83,
+          "commission_rate": 0.08,
+          "ranking_score": 0.652,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 83%."
+        },
+        {
+          "item_id": "sp_07",
+          "title": "Áo len dệt kim mỏng thu đông cổ bẻ kéo khóa kẻ sọc",
+          "price": "249.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp07",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.82,
+          "commission_rate": 0.05,
+          "ranking_score": 0.632,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 82%."
+        },
+        {
+          "item_id": "sp_08",
+          "title": "Áo len tay dài cổ bẻ phối sọc đỏ đen kẻ mảnh",
+          "price": "310.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp08",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.81,
+          "commission_rate": 0.1,
+          "ranking_score": 0.645,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 81%."
+        },
+        {
+          "item_id": "sp_09",
+          "title": "Áo len khóa kéo nữ sọc ngang phong cách preppy ulzzang",
+          "price": "275.000₫",
+          "platform": "Lazada",
+          "product_url": "https://shopee.vn/san-pham-len-sp09",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.8,
+          "commission_rate": 0.07,
+          "ranking_score": 0.625,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 80%."
+        },
+        {
+          "item_id": "sp_10",
+          "title": "Áo len chui đầu cổ bẻ có khóa kéo chất len tăm co giãn",
+          "price": "199.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp10",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.79,
+          "commission_rate": 0.05,
+          "ranking_score": 0.609,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 79%."
+        },
+        {
+          "item_id": "sp_11",
+          "title": "Áo khoác len cardigan kéo khóa họa tiết kẻ ngang basic",
+          "price": "340.000₫",
+          "platform": "Shopee Mall",
+          "product_url": "https://shopee.vn/san-pham-len-sp11",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.78,
+          "commission_rate": 0.12,
+          "ranking_score": 0.631,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 78%."
+        },
+        {
+          "item_id": "sp_12",
+          "title": "Áo len nam nữ cổ bẻ khóa zip kim loại vải dệt mịn",
+          "price": "420.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp12",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.77,
+          "commission_rate": 0.06,
+          "ranking_score": 0.598,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 77%."
+        },
+        {
+          "item_id": "sp_13",
+          "title": "Áo len dệt kim cổ lọ có khóa zip ngực sọc đen đỏ",
+          "price": "365.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp13",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.76,
+          "commission_rate": 0.08,
+          "ranking_score": 0.599,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 76%."
+        },
+        {
+          "item_id": "sp_14",
+          "title": "Áo len polo dài tay sọc ngang đỏ trắng đen dáng lửng croptop",
+          "price": "230.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp14",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.75,
+          "commission_rate": 0.05,
+          "ranking_score": 0.579,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 75%."
+        },
+        {
+          "item_id": "sp_15",
+          "title": "Áo sweater dệt kim khóa kéo nửa ngực sọc kẻ phối màu",
+          "price": "315.000₫",
+          "platform": "Lazada",
+          "product_url": "https://shopee.vn/san-pham-len-sp15",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.74,
+          "commission_rate": 0.09,
+          "ranking_score": 0.588,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 74%."
+        },
+        {
+          "item_id": "sp_16",
+          "title": "Áo len oversize cổ bẻ kéo khóa kẻ ngang dày dặn mùa đông",
+          "price": "450.000₫",
+          "platform": "Shopee Mall",
+          "product_url": "https://shopee.vn/san-pham-len-sp16",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.72,
+          "commission_rate": 0.14,
+          "ranking_score": 0.594,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 72%."
+        },
+        {
+          "item_id": "sp_17",
+          "title": "Áo len polo tay dài dệt kim sọc ngang viền cổ tương phản",
+          "price": "280.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp17",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.71,
+          "commission_rate": 0.05,
+          "ranking_score": 0.549,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 71%."
+        },
+        {
+          "item_id": "sp_18",
+          "title": "Áo len zip cổ cao sọc ngang ba màu đen đỏ be thời trang",
+          "price": "335.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp18",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.7,
+          "commission_rate": 0.06,
+          "ranking_score": 0.546,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 70%."
+        },
+        {
+          "item_id": "sp_19",
+          "title": "Áo dệt kim tay dài cổ bẻ khóa zip kẻ sọc ngang phong cách thể thao",
+          "price": "260.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp19",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.68,
+          "commission_rate": 0.05,
+          "ranking_score": 0.527,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 68%."
+        },
+        {
+          "item_id": "sp_20",
+          "title": "Áo len cổ bẻ khóa zip kẻ sọc tay ngắn mùa thu",
+          "price": "215.000₫",
+          "platform": "Shopee",
+          "product_url": "https://shopee.vn/san-pham-len-sp20",
+          "thumbnail_url": "https://down-vn.img.susercontent.com/file/sg-11134201-824gz-metwt9x4n7yb0d",
+          "query_used": "áo len cổ bẻ khóa kéo kẻ sọc trắng đen đỏ",
+          "match_score": 0.65,
+          "commission_rate": 0.05,
+          "ranking_score": 0.504,
+          "match_reason": "Sản phẩm tương tự với độ tương đồng thị giác 65%."
+        }
+      ]
+    }
+  },
+  "timeline": [
+    {
+      "timestamp": 0.0,
+      "frame_index": 0,
+      "detections": [
+        {
+          "object_id": "obj_sweater_01",
+          "bbox": [
+            0.25,
+            0.32,
+            0.65,
+            0.68
+          ],
+          "confidence": 0.98,
+          "polygon": [
+            [
+              0.32,
+              0.25
+            ],
+            [
+              0.68,
+              0.25
+            ],
+            [
+              0.72,
+              0.65
+            ],
+            [
+              0.28,
+              0.65
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

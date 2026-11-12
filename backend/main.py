@@ -13,9 +13,19 @@ from routes.report_routes import router as report_router
 from routes.reconciliation_routes import router as reconciliation_router
 from fastapi.staticfiles import StaticFiles
 
+import os
+import mimetypes
+mimetypes.add_type("image/webp", ".webp")
+from services.sam3_service import SAM3Engine
+from routes.sam_routes import router as sam_router
+from fastapi.staticfiles import StaticFiles
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 Đang khởi động Tap AI Backend Server...")
+    print("=" * 80)
+    print("🚀 ĐANG KHỞI ĐỘNG TAP AI UNIFIED BACKEND SERVER...")
+    print("=" * 80)
+
     # 1. Khởi tạo Database Tables (Affiliate Portal)
     try:
         init_db()
@@ -27,29 +37,44 @@ async def lifespan(app: FastAPI):
     uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
     os.makedirs(uploads_dir, exist_ok=True)
 
-    # 2. Khởi tạo Pipeline Search & RAG
+    # 2. SAM3 Computer Vision Engine
+    print("⏳ [1/2] Đang khởi tạo SAM 3 Computer Vision Engine...")
+    try:
+        crops_dir = os.path.join(os.path.dirname(__file__), "outputs", "sam_crops")
+        app.state.sam_engine = SAM3Engine(output_dir=crops_dir)
+        print("✅ [1/2] SAM 3 Computer Vision Engine đã sẵn sàng phục vụ!")
+    except Exception as e:
+        print(f"❌ [1/2] Lỗi khởi tạo SAM 3 Engine: {e}")
+        app.state.sam_engine = None
+
+    # 3. Search Pipeline
+    print("⏳ [2/2] Đang khởi tạo Pipeline Search cốt lõi...")
     api_key = os.getenv("GEMINI_API_KEY")
     skip_pipeline = os.getenv("SKIP_PIPELINE_INIT", "false").lower() in ("true", "1", "yes")
     if api_key and not skip_pipeline:
         try:
             from services.search_pipeline import TapAISearchPipeline
-            app.state.search_pipeline = TapAISearchPipeline(cache_storage="./qdrant_storage")
-            print("🔍 Pipeline Search & RAG đã khởi tạo thành công.")
+            app.state.search_pipeline = TapAISearchPipeline()
+            print("✅ [2/2] Pipeline Search cốt lõi đã sẵn sàng phục vụ!")
         except Exception as e:
-            print(f"⚠️ Chú ý: Pipeline Search chưa sẵn sàng: {e}")
+            print(f"⚠️ [2/2] Chú ý từ Search Pipeline: {e}")
             app.state.search_pipeline = None
     else:
-        print("⏩ Bỏ qua khởi tạo Search Pipeline (chưa cấu hình GEMINI_API_KEY hoặc Test Mode).")
+        print("⏩ [2/2] Bỏ qua khởi tạo Search Pipeline (chưa cấu hình GEMINI_API_KEY hoặc Test Mode).")
         app.state.search_pipeline = None
 
-    print("✅ Tap AI Backend đã sẵn sàng phục vụ!\n")
+    print("-" * 80)
+    print("🎉 TẤT CẢ MODULE TAP AI ĐÃ KHỞI TẠO THÀNH CÔNG! SERVER SẴN SÀNG NHẬN REQUEST.")
+    print("👉 Swagger UI tài liệu API: http://localhost:8000/docs")
+    print("👉 Merchant Web Portal: http://localhost:8000/portal/index.standalone.html")
+    print("=" * 80 + "\n")
     yield
-    print("🛑 Đang dừng server và giải phóng tài nguyên...")
+    print("\n🛑 Đang dừng Tap AI Backend Server và giải phóng tài nguyên...")
 
 app = FastAPI(
     title="Tap AI Backend API",
-    description="Interactive Shoppable Media Engine & Affiliate Portal Backend (FastAPI + Meta SAM 3 + Gemini VLM + DINOv2 RAG Cache + SQLite/PostgreSQL)",
-    version="1.2.0",
+    description="Interactive Shoppable Media Engine & Affiliate Portal Backend (FastAPI + Meta SAM 3 + Gemini 3.5 Flash VLM + Serper Search + Background Worker)",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -137,14 +162,32 @@ def direct_affiliate_redirect(
 ):
     return redirect_to_affiliate(product_id=product_id, request=request, ext_user_id=ext_user_id, source=source, test_fraud=test_fraud, db=db)
 
+# Gắn Router SAM3
+app.include_router(sam_router)
+
+# Truy cập ảnh ..\crops\
+crops_static_path = os.path.join(os.path.dirname(__file__), "outputs", "sam_crops")
+os.makedirs(crops_static_path, exist_ok=True)
+app.mount("/crops", StaticFiles(directory=crops_static_path), name="crops")
+
 @app.get("/health", tags=["System"])
 def health_check():
     pipeline = getattr(app.state, "search_pipeline", None)
-    cached_count = pipeline.rag_cache.count() if pipeline else 0
+
+    sam_engine = getattr(app.state, "sam_engine", None)
+    sam_status = {
+        "loaded": sam_engine is not None,
+        "device": str(sam_engine.device) if sam_engine else "unknown",
+        "student_loaded": bool(sam_engine.student_loaded) if sam_engine else False,
+        "teacher_loaded": bool(sam_engine.sam3_loaded) if sam_engine else False,
+        "cached_objects_in_ram": len(sam_engine._cached_candidates) if (sam_engine and sam_engine._cached_candidates) else 0
+    }
+
     return {
         "status": "healthy",
         "service": "Tap AI Backend",
-        "cached_objects_count": cached_count
+        "pipeline_ready": pipeline is not None,
+        "sam3_engine": sam_status
     }
 
 if __name__ == "__main__":
