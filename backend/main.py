@@ -1,5 +1,14 @@
-from contextlib import asynccontextmanager
 import os
+import mimetypes
+from dotenv import load_dotenv
+
+# Đảm bảo nạp biến môi trường từ file .env dù server được gọi từ thư mục nào
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_backend_dir, ".env"))
+load_dotenv(os.path.join(_backend_dir, "..", ".env"))
+load_dotenv()
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.connection import init_db
@@ -13,12 +22,9 @@ from routes.report_routes import router as report_router
 from routes.reconciliation_routes import router as reconciliation_router
 from fastapi.staticfiles import StaticFiles
 
-import os
-import mimetypes
 mimetypes.add_type("image/webp", ".webp")
 from services.sam3_service import SAM3Engine
 from routes.sam_routes import router as sam_router
-from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,9 +46,14 @@ async def lifespan(app: FastAPI):
     # 2. SAM3 Computer Vision Engine
     print("⏳ [1/2] Đang khởi tạo SAM 3 Computer Vision Engine...")
     try:
-        crops_dir = os.path.join(os.path.dirname(__file__), "outputs", "sam_crops")
+        crops_env = os.getenv("OUTPUT_CROPS_DIR", "outputs/sam_crops")
+        if os.path.isabs(crops_env):
+            crops_dir = crops_env
+        else:
+            crops_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", crops_env))
+        os.makedirs(crops_dir, exist_ok=True)
         app.state.sam_engine = SAM3Engine(output_dir=crops_dir)
-        print("✅ [1/2] SAM 3 Computer Vision Engine đã sẵn sàng phục vụ!")
+        print(f"✅ [1/2] SAM 3 Computer Vision Engine đã sẵn sàng phục vụ! (Thư mục crops: '{crops_dir}')")
     except Exception as e:
         print(f"❌ [1/2] Lỗi khởi tạo SAM 3 Engine: {e}")
         app.state.sam_engine = None
@@ -165,10 +176,12 @@ def direct_affiliate_redirect(
 # Gắn Router SAM3
 app.include_router(sam_router)
 
-# Truy cập ảnh ..\crops\
-crops_static_path = os.path.join(os.path.dirname(__file__), "outputs", "sam_crops")
+# Truy cập ảnh crops tĩnh phục vụ Extension / Web Player
+crops_env = os.getenv("OUTPUT_CROPS_DIR", "outputs/sam_crops")
+crops_static_path = crops_env if os.path.isabs(crops_env) else os.path.abspath(os.path.join(os.path.dirname(__file__), "..", crops_env))
 os.makedirs(crops_static_path, exist_ok=True)
 app.mount("/crops", StaticFiles(directory=crops_static_path), name="crops")
+app.mount("/outputs/sam_crops", StaticFiles(directory=crops_static_path), name="sam_crops_outputs")
 
 @app.get("/health", tags=["System"])
 def health_check():

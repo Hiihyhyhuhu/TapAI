@@ -415,8 +415,31 @@ class SAM3Engine:
         self._cached_img_bgr: Optional[np.ndarray] = None
         self._cached_candidates: List[Dict[str, Any]] = []
 
-        # Tầng 1: Thử nạp Meta SAM 3 nếu chạy GPU
+        # Tầng 1: Thử nạp Meta SAM 3 nếu chạy GPU và cấu hình cho phép
+        enable_sam3 = os.getenv("ENABLE_SAM3_TEACHER", "auto").lower()
+        should_load_teacher = False
         if self.device == "cuda":
+            if enable_sam3 in ["true", "1", "yes"]:
+                should_load_teacher = True
+            elif enable_sam3 in ["false", "0", "no"]:
+                should_load_teacher = False
+                logger.info("ℹ️ [SAM 3 Engine] ENABLE_SAM3_TEACHER=false: Bỏ qua nạp Teacher SAM 3, ưu tiên GPU cho Student Model (YOLO-World).")
+            else:
+                # Chế độ 'auto': Chỉ nạp Teacher nếu GPU có tối thiểu 6GB VRAM để tránh CUDA OOM
+                try:
+                    import torch
+                    vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+                    if vram_gb >= 6.0:
+                        should_load_teacher = True
+                    else:
+                        logger.info(
+                            f"💡 [SAM 3 Engine] GPU hiện tại có {vram_gb:.1f} GB VRAM (< 6.0 GB). "
+                            "Tự động dùng Student YOLO-World trên GPU để tối ưu hiệu năng và tránh CUDA Out of Memory."
+                        )
+                except Exception:
+                    should_load_teacher = True
+
+        if should_load_teacher:
             self._try_load_sam3(sam3_repo, sam3_fallback_repo)
 
         # Tầng 2: Nạp Student Model (YOLO-seg) cho CPU hoặc phụ trợ
@@ -1348,12 +1371,21 @@ class SAM3Engine:
                         })
             except Exception as e:
                 logger.warning(f"SAM 3 Teacher inference gặp lỗi: {e}")
+                if self.device == "cuda":
+                    try:
+                        import torch
+                        torch.cuda.empty_cache()
+                    except Exception:
+                        pass
 
         # 2. Sử dụng Student Model (Open-Vocabulary YOLO-World hoặc YOLO-Seg)
         if not candidates and self.student_loaded and self.student_model is not None:
             try:
                 # Tính toán kích thước inference tối ưu theo độ phân giải ảnh thực tế
-                target_imgsz = min(1280, max(640, int(np.ceil(max(w, h) / 32) * 32)))
+                if str(self.device).lower() == "cpu":
+                    target_imgsz = 640
+                else:
+                    target_imgsz = min(1280, max(640, int(np.ceil(max(w, h) / 32) * 32)))
                 results = self.student_model.predict(
                     source=img_bgr,
                     device=self.device,
@@ -1397,18 +1429,26 @@ class SAM3Engine:
                         if bw < 10 or bh < 10:
                             continue
 
-                        # Sinh mask nhị phân bằng GrabCut trong vùng BBox
-                        gc_mask = np.zeros((h, w), np.uint8)
-                        bgd_model = np.zeros((1, 65), np.float64)
-                        fgd_model = np.zeros((1, 65), np.float64)
-                        try:
-                            cv2.grabCut(img_bgr, gc_mask, (x1, y1, bw, bh), bgd_model, fgd_model, 2, cv2.GC_INIT_WITH_RECT)
-                            bin_mask = np.where((gc_mask == 2) | (gc_mask == 0), 0, 1).astype(np.uint8)
-                            if np.sum(bin_mask) < 20:
-                                bin_mask = np.zeros((h, w), np.uint8)
+                        # Sinh mask nhị phân siêu tốc: chỉ chạy GrabCut trong vùng Crop thay vì toàn bộ khung hình
+                        bin_mask = np.zeros((h, w), np.uint8)
+                        crop = img_bgr[y1:y2, x1:x2]
+                        ch, cw = crop.shape[:2]
+                        if ch >= 12 and cw >= 12:
+                            scale = min(1.0, 256.0 / max(ch, cw))
+                            small_crop = cv2.resize(crop, (0, 0), fx=scale, fy=scale) if scale < 1.0 else crop
+                            sch, scw = small_crop.shape[:2]
+                            gc_mask = np.zeros((sch, scw), np.uint8)
+                            bgd_m = np.zeros((1, 65), np.float64)
+                            fgd_m = np.zeros((1, 65), np.float64)
+                            try:
+                                cv2.grabCut(small_crop, gc_mask, (1, 1, scw - 2, sch - 2), bgd_m, fgd_m, 1, cv2.GC_INIT_WITH_RECT)
+                                sub_m = np.where((gc_mask == 2) | (gc_mask == 0), 0, 1).astype(np.uint8)
+                                if scale < 1.0:
+                                    sub_m = cv2.resize(sub_m, (cw, ch), interpolation=cv2.INTER_NEAREST)
+                                bin_mask[y1:y2, x1:x2] = sub_m
+                            except Exception:
                                 bin_mask[y1:y2, x1:x2] = 1
-                        except Exception:
-                            bin_mask = np.zeros((h, w), np.uint8)
+                        else:
                             bin_mask[y1:y2, x1:x2] = 1
 
                         candidates.append({

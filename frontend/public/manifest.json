@@ -3,7 +3,17 @@
   "name": "TAP AI - Shoppable Media",
   "version": "1.0.0",
   "description": "Tap anything, buy anywhere",
-  "permissions": ["activeTab", "sidePanel", "scripting"],
+  "permissions": [
+    "activeTab",
+    "sidePanel",
+    "scripting",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "<all_urls>"
+  ],
   "action": {
     "default_title": "Mở TAP AI"
   },
@@ -12,5 +22,12 @@
   },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
 }

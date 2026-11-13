@@ -20,6 +20,9 @@ from services.task_manager import task_manager
 
 router = APIRouter(prefix="/api/v1", tags=["Search & RAG Engine"])
 
+_PROXY_CACHE: Dict[str, tuple] = {}
+_PROXY_CLIENT = httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=2.5), follow_redirects=True)
+
 @router.get("/image-proxy", summary="Proxy hình ảnh tránh chặn CORS / Hotlinking của sàn TMĐT")
 async def image_proxy(url: str):
     """
@@ -29,26 +32,57 @@ async def image_proxy(url: str):
     if not url.startswith("http://") and not url.startswith("https://"):
         raise HTTPException(status_code=400, detail="URL không hợp lệ")
 
+    # Kiểm tra RAM cache
+    if url in _PROXY_CACHE:
+        cached_content, cached_type = _PROXY_CACHE[url]
+        from fastapi import Response
+        return Response(
+            content=cached_content,
+            media_type=cached_type,
+            headers={"Cache-Control": "public, max-age=86400, immutable"}
+        )
+
     try:
         from fastapi import Response
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
-            resp = await client.get(
-                url, 
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": "https://shopee.vn/"
-                }
-            )
-            resp.raise_for_status()
-            content_type = resp.headers.get("content-type", "image/jpeg")
-            return Response(content=resp.content, media_type=content_type)
+        resp = await _PROXY_CLIENT.get(
+            url, 
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://shopee.vn/"
+            }
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("content-type", "image/jpeg")
+        
+        # Lưu cache tối đa 100 ảnh
+        if len(_PROXY_CACHE) > 100:
+            _PROXY_CACHE.pop(next(iter(_PROXY_CACHE)))
+        _PROXY_CACHE[url] = (resp.content, content_type)
+
+        return Response(
+            content=resp.content, 
+            media_type=content_type,
+            headers={"Cache-Control": "public, max-age=86400, immutable"}
+        )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Không thể tải ảnh từ URL gốc: {e}")
 
-@router.get("/seasonality/status", summary="Kiểm tra chiến dịch mùa vụ và trọng số xếp hạng hiện tại")
+@router.get("/ranking-mode", summary="Kiểm tra chế độ xếp hạng hiện tại của Search Engine")
+def get_ranking_mode():
+    return {
+        "mode": "pure_similarity",
+        "description": "Tối ưu hóa 100% độ tương đồng thị giác - trả về sản phẩm khớp nhất",
+        "affiliate_enabled": False,
+        "seasonality_enabled": False
+    }
+
+@router.get("/seasonality/status", deprecated=True, summary="[Deprecated] Endpoint mùa vụ cũ (đã chuyển sang Pure Similarity)")
 def get_seasonality_status():
-    from services.seasonality import SeasonalityEngine
-    return SeasonalityEngine.get_weights()
+    return {
+        "status": "deprecated",
+        "mode": "pure_similarity",
+        "message": "Optuna và Auto-Seasonality đã được loại bỏ. Hệ thống hiện tối ưu hóa trả về sản phẩm khớp nhất."
+    }
 
 def get_pipeline(request: Request):
     pipeline = getattr(request.app.state, "search_pipeline", None)
@@ -138,7 +172,39 @@ async def match_single_item(
     - `image_base64`: Chuỗi Base64 của ảnh crop từ video player.
     - `image_url`: URL trực tiếp của ảnh trên web.
     """
-    pipeline = get_pipeline(request)
+    pipeline = getattr(request.app.state, "search_pipeline", None)
+    if not pipeline:
+        return {
+            "object_id": payload.object_id,
+            "query_used": "thời trang xu hướng Shopee",
+            "search_status": "mock_preview",
+            "message": "Search Pipeline đang chạy ở chế độ Mock Preview do chưa cấu hình GEMINI_API_KEY trong .env.",
+            "products": [
+                {
+                    "item_id": f"sp_{payload.object_id}_1",
+                    "title": "[Gợi ý RAG] Thời Trang Cao Cấp Xu Hướng Trẻ",
+                    "price": "289.000₫",
+                    "originalPrice": "420.000₫",
+                    "thumbnail_url": payload.image_url or "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=60",
+                    "platform": "Shopee Mall",
+                    "product_url": "https://shopee.vn",
+                    "match_score": 0.94,
+                    "commission_rate": 0.15
+                },
+                {
+                    "item_id": f"sp_{payload.object_id}_2",
+                    "title": "[Gợi ý RAG] Thiết Kế Tinh Tế Chính Hãng",
+                    "price": "345.000₫",
+                    "originalPrice": "490.000₫",
+                    "thumbnail_url": "https://images.unsplash.com/photo-1542272604-780c96856592?w=500&auto=format&fit=crop&q=60",
+                    "platform": "Lazada",
+                    "product_url": "https://lazada.vn",
+                    "match_score": 0.89,
+                    "commission_rate": 0.10
+                }
+            ]
+        }
+
     pil_image = await extract_pil_image_from_sources(
         image_base64=payload.image_base64,
         image_url=payload.image_url
@@ -147,7 +213,8 @@ async def match_single_item(
     result = await pipeline.process_image(
         image_input=pil_image,
         object_id=payload.object_id,
-        top_k=payload.top_k
+        top_k=payload.top_k,
+        image_url=payload.image_url
     )
     return result
 

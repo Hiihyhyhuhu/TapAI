@@ -14,14 +14,27 @@ export interface ProductItem {
   link: string;
   platform?: 'Shopee' | 'Lazada' | 'Tiki' | 'TikTok Shop' | string;
   bbox?: [number, number, number, number];
+  matchScore?: number;
+  matchReason?: string;
 }
 
 export type ChromeMessageType =
   | 'ITEM_CLICKED'
   | 'SCENE_ITEMS_UPDATED'
-  | 'TOGGLE_OVERLAY';
+  | 'TOGGLE_OVERLAY'
+  | 'SEARCH_LOADING'
+  | 'SEARCH_ERROR';
 
 export interface ChromeMessage {
   type: ChromeMessageType;
-  data?: ProductItem | ProductItem[];
+  data?: ProductItem | ProductItem[] | string;
+}
+
+export interface TapAiStorageState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  loadingText?: string;
+  errorMessage?: string | null;
+  selectedItem?: ProductItem | null;
+  detectedItems?: ProductItem[];
+  updatedAt?: number;
 }

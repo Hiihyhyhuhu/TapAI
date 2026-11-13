@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional, Dict, Any
 
 # ============================================================================
@@ -7,25 +7,47 @@ from typing import List, Optional, Dict, Any
 # ============================================================================
 
 class EcomSearchQuery(BaseModel):
-    """Cấu trúc truy vấn do VLM sinh ra từ ảnh crop"""
+    """Cấu trúc truy vấn đa cấp độ do VLM sinh ra từ ảnh crop (Tránh bẫy Zero-Recall & Over-specification)"""
     category_path: str = Field(
-        description="Đường dẫn danh mục chuẩn Shopee (VD: 'Thời trang nam > Áo khoác > Áo khoác bomber')"
+        description="Đường dẫn danh mục chuẩn Shopee (VD: 'Thời trang nam > Áo len & Áo nỉ')"
     )
     item_type: str = Field(
-        description="Tên gọi cốt lõi của sản phẩm (VD: 'Áo khoác bomber', 'Túi đeo chéo nữ')"
+        description="Tên gọi cốt lõi của sản phẩm theo từ vựng sàn (VD: 'Áo polo zip', 'Quần ống suông', 'Túi kẹp nách')"
     )
     color: str = Field(
-        description="Màu sắc chủ đạo bằng tiếng Việt (VD: 'đen', 'xanh rêu', 'trắng kem')"
+        description="Màu sắc chủ đạo bằng tiếng Việt (VD: 'đen trắng', 'đỏ đen', 'be')"
     )
     style_and_material: List[str] = Field(
-        description="2-4 từ khóa về kiểu dáng, chất liệu chuẩn văn phong Shopee (VD: ['form rộng', 'vải kaki', 'tay dài', 'hàn quốc'])"
-    )
-    exact_query: str = Field(
-        description="Câu truy vấn tìm kiếm chi tiết nhất (gộp item_type + chất liệu + kiểu dáng + màu sắc, dài 5-8 từ)"
+        description="2-4 từ lóng/từ khóa hot trend chuẩn seller Shopee (VD: ['form rộng', 'ulzzang', 'polo zip', 'hàn quốc'])"
     )
     broad_query: str = Field(
-        description="Câu truy vấn ngắn gọn dự phòng (chỉ gồm item_type + màu sắc + 1 đặc điểm chính, dài 3-4 từ)"
+        default="",
+        description="[Cấp 1 - Rộng] 2-3 từ khóa hot nhất đảm bảo 100% không bao giờ bị Zero-Recall (VD: 'áo len polo kẻ ngang')"
     )
+    medium_query: str = Field(
+        default="",
+        description="[Cấp 2 - Cân bằng] 3-5 từ khóa kết hợp thuật ngữ seller và phong cách hot (VD: 'áo len polo zip kẻ ngang ulzzang form rộng')"
+    )
+    detailed_query: str = Field(
+        default="",
+        description="[Cấp 3 - Chi tiết] 5-7 từ khóa mô tả phom + họa tiết + chi tiết điểm nhấn (VD: 'áo len polo zip kẻ sọc ngang đỏ đen trắng')"
+    )
+    exact_query: str = Field(
+        default="",
+        description="Truy vấn tương thích ngược (tự động đồng bộ với detailed_query hoặc medium_query)"
+    )
+
+    @model_validator(mode="after")
+    def populate_defaults(self):
+        if not self.exact_query:
+            self.exact_query = self.detailed_query or self.medium_query or self.broad_query
+        if not self.detailed_query:
+            self.detailed_query = self.exact_query
+        if not self.medium_query:
+            self.medium_query = self.exact_query
+        if not self.broad_query:
+            self.broad_query = f"{self.item_type} {self.color}".strip()
+        return self
 
 class ProductCandidate(BaseModel):
     """Cấu trúc 1 sản phẩm thu thập được từ Shopee/Lazada"""
@@ -36,8 +58,9 @@ class ProductCandidate(BaseModel):
     product_url: str = Field(description="Link dẫn thẳng tới trang mua hàng (đã gắn mã hoặc link sạch)")
     thumbnail_url: str = Field(description="Link ảnh đại diện sản phẩm")
     query_used: str = Field(description="Truy vấn đã dùng để tìm ra sản phẩm này")
-    match_score: Optional[float] = Field(default=0.0, description="Điểm tương đồng thị giác (0.0 - 1.0) do VLM Reranker chấm")
+    match_score: Optional[float] = Field(default=0.0, description="Điểm tương đồng thị giác (0.0 - 1.0) tính toán từ Rubric")
     match_reason: Optional[str] = Field(default=None, description="Lời giải thích vì sao sản phẩm này khớp với ảnh crop")
+    rubric_breakdown: Optional[Dict[str, Any]] = Field(default=None, description="Chi tiết đánh giá rời rạc theo Rubric")
     commission_rate: Optional[float] = Field(default=0.05, description="Tỷ lệ hoa hồng Affiliate (VD: 0.05 = 5%, 0.15 = 15%)")
     ranking_score: Optional[float] = Field(default=None, description="Điểm xếp hạng tổng hợp theo biên Pareto (A*similarity + B*commission)")
 
