@@ -226,6 +226,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             tab.windowId,
             { format: "jpeg", quality: 85 },
             async (dataUrl) => {
+              // Báo ngay về content.js rằng màn hình đã được chụp xong
+              // Lúc này content.js mới an toàn hiển thị hiệu ứng Ripple UI mà không bị dính vào frame
+              sendResponse({ status: "captured" });
+
               try {
                 if (chrome.runtime.lastError || !dataUrl) {
                   if (
@@ -242,7 +246,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     saveStateToStorage({ status: "error", errorMessage: capErr });
                     notifySidePanel({ type: "SEARCH_ERROR", data: capErr });
                   }
-                  sendResponse({ status: "error", message: "capture_failed" });
                   return;
                 }
 
@@ -252,10 +255,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   tapX: message.tap_x,
                   tapY: message.tap_y,
                 });
-                sendResponse({ status: "done" });
               } catch (innerErr) {
                 console.error("Lỗi processSearch:", innerErr);
-                sendResponse({ status: "error", message: innerErr.message });
               }
             }
           );

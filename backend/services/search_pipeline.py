@@ -43,9 +43,16 @@ class TapAISearchPipeline:
             temp_path = image_input
             cleanup_temp = False
         else:
-            pil_image = image_input.convert("RGB")
+            # Composite lên nền trắng nếu ảnh có kênh Alpha (WebP/RGBA trong suốt)
+            if image_input.mode in ("RGBA", "LA") or (image_input.mode == "P" and "transparency" in image_input.info):
+                rgba = image_input.convert("RGBA")
+                white_bg = Image.new("RGB", rgba.size, (255, 255, 255))
+                white_bg.paste(rgba, mask=rgba.split()[3])
+                pil_image = white_bg
+            else:
+                pil_image = image_input.convert("RGB")
             temp_path = f"./temp_{uuid.uuid4().hex}.jpg"
-            pil_image.save(temp_path)
+            pil_image.save(temp_path, format="JPEG", quality=95)
             cleanup_temp = True
 
         try:

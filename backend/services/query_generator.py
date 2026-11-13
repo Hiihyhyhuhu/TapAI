@@ -8,6 +8,22 @@ from models.search_schemas import EcomSearchQuery
 
 load_dotenv()
 
+def prepare_vlm_image(image_input: Image.Image) -> Image.Image:
+    """
+    Chuẩn hóa ảnh cho Gemini VLM:
+    - Nếu ảnh là RGBA / WebP có kênh trong suốt (Alpha):
+      Ghép (composite) vật thể lên NỀN TRẮNG TINH (255, 255, 255) bằng Alpha mask.
+      Xóa sạch 100% chi tiết bối cảnh, da thịt thừa hoặc lớp áo ngoài bị che bởi mask.
+    - Khắc phục triệt để lỗi .convert('RGB') mặc định của PIL vứt bỏ kênh Alpha làm lộ nền cũ!
+    """
+    if image_input.mode in ("RGBA", "LA") or (image_input.mode == "P" and "transparency" in image_input.info):
+        rgba = image_input.convert("RGBA")
+        white_bg = Image.new("RGB", rgba.size, (255, 255, 255))
+        # Ghép bằng kênh alpha làm mặt nạ
+        white_bg.paste(rgba, mask=rgba.split()[3])
+        return white_bg
+    return image_input.convert("RGB")
+
 class QueryGenerator:
     """
     Module A: Phân tích thị giác và sinh bộ truy vấn Đa cấp độ (Multi-Query Expansion)
@@ -42,7 +58,7 @@ class QueryGenerator:
             raise FileNotFoundError(f"Không tìm thấy file ảnh tại: {image_path}")
 
         with Image.open(image_path) as img_file:
-            img = img_file.convert("RGB")
+            img = prepare_vlm_image(img_file)
 
         prompt = """
         Bạn là chuyên gia tối ưu hóa tìm kiếm (SEO & Merchandiser) hàng đầu trên Shopee, Lazada và TikTok Shop Việt Nam.

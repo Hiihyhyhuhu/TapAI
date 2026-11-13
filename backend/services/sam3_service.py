@@ -415,6 +415,10 @@ class SAM3Engine:
         self._cached_img_bgr: Optional[np.ndarray] = None
         self._cached_candidates: List[Dict[str, Any]] = []
 
+        # Tầng Point-SAM: Nạp Point-Prompted SAM (SAM 2.1 Tiny hoặc MobileSAM) giải mã điểm click
+        self.point_sam = None
+        self._try_load_point_sam()
+
         # Tầng 1: Thử nạp Meta SAM 3 nếu chạy GPU và cấu hình cho phép
         enable_sam3 = os.getenv("ENABLE_SAM3_TEACHER", "auto").lower()
         should_load_teacher = False
@@ -449,6 +453,39 @@ class SAM3Engine:
             f"✅ [SAM 3 Engine] Đã nạp xong: Teacher SAM 3={self.sam3_loaded}, "
             f"Student Model={self.student_loaded}, Thư mục crops='{self.output_dir}'"
         )
+
+    def _try_load_point_sam(self):
+        """Thử nạp Point-Prompted SAM (SAM 2.1 Tiny hoặc MobileSAM) từ Ultralytics phục vụ click tức thời"""
+        try:
+            from ultralytics import SAM
+            sam_candidates = [
+                "sam2.1_t.pt",
+                "mobile_sam.pt",
+                os.path.join(os.path.dirname(__file__), "..", "sam2.1_t.pt"),
+                os.path.join(os.path.dirname(__file__), "..", "weights", "sam2.1_t.pt"),
+                os.path.join("weights", "sam2.1_t.pt")
+            ]
+            for cand in sam_candidates:
+                try:
+                    if os.path.exists(cand):
+                        self.point_sam = SAM(cand)
+                        logger.info(f"🎯 [Point-SAM Engine] Đã nạp thành công Point-Prompted SAM từ '{cand}'!")
+                        return
+                except Exception as ex_one:
+                    logger.debug(f"Không thể nạp Point-SAM từ file '{cand}': {ex_one}")
+
+            # Khởi tạo trực tiếp sam2.1_t.pt hoặc mobile_sam.pt
+            try:
+                self.point_sam = SAM("sam2.1_t.pt")
+                logger.info("🎯 [Point-SAM Engine] Đã nạp thành công SAM 2.1 Tiny ('sam2.1_t.pt')!")
+            except Exception:
+                try:
+                    self.point_sam = SAM("mobile_sam.pt")
+                    logger.info("🎯 [Point-SAM Engine] Đã nạp thành công MobileSAM ('mobile_sam.pt')!")
+                except Exception as ex2:
+                    logger.warning(f"Không thể khởi tạo SAM 2.1 Tiny hoặc MobileSAM: {ex2}")
+        except Exception as e:
+            logger.warning(f"Thư viện Ultralytics SAM chưa sẵn sàng ({e}). Sẽ dùng cơ chế giải mã dự phòng.")
 
     def _try_load_sam3(self, sam3_repo: str, fallback_repo: str):
         """Thử nạp Meta SAM 3 Teacher Model qua HuggingFace transformers"""
@@ -1218,47 +1255,117 @@ class SAM3Engine:
         tx = max(0, min(w - 1, tx))
         ty = max(0, min(h - 1, ty))
 
-        # Kiểm tra xem ảnh này đã được warmup cache chưa
-        if self._cached_image_hash is None or self._cached_img_bgr is None or self._cached_img_bgr.shape != img_bgr.shape:
-            self.warmup_frame_cache(img_bgr, cache_key=image_name)
-
-        # BƯỚC 1: Tìm kiếm trong RAM Cache
-        matching = []
-        for cand in self._cached_candidates:
-            m = cand["mask"]
-            if m.shape[:2] != (h, w):
-                m = cv2.resize(m.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
-            y1_p, y2_p = max(0, ty - 3), min(h, ty + 4)
-            x1_p, x2_p = max(0, tx - 3), min(w, tx + 4)
-            if np.any(m[y1_p:y2_p, x1_p:x2_p] > 0):
-                mask_area = float(np.sum(m > 0))
-                matching.append((mask_area, float(cand["conf"]), m, cand["bbox"], str(cand["category"])))
-
         selected_mask = None
         selected_bbox = None
         selected_category = "fashion_item"
-        selected_conf = 0.85
-        extraction_mode = "cache_hit"
+        selected_conf = 0.92
+        extraction_mode = "hybrid_yolo_sam"
 
-        if matching:
-            # Ưu tiên vật thể diện tích nhỏ hơn nằm đè bên trên
-            matching.sort(key=lambda x: (x[0], -x[1]))
-            _, selected_conf, selected_mask, selected_bbox, selected_category = matching[0]
-        else:
-            # BƯỚC 2: Nếu chưa trúng mask nào trong Cache -> Decode qua Prompt SAM 3 hoặc GrabCut
-            extraction_mode = "dynamic_point_decode"
-            selected_mask, selected_bbox, selected_category, selected_conf = self._decode_point_prompt(
-                img_bgr, tx, ty
-            )
+        # 1. Chạy / kiểm tra Cache của YOLO-World trước để lấy BBox và Category chuẩn
+        if self._cached_image_hash is None or self._cached_img_bgr is None or self._cached_img_bgr.shape != img_bgr.shape:
+            self.warmup_frame_cache(img_bgr, cache_key=image_name, video_id=video_id, frame_index=frame_index)
 
-        # BƯỚC 3: Rút gọn Contour và bóc tách ảnh .WEBP nền trong suốt
+        # Tìm các ứng viên YOLO-World chứa điểm click (loại bỏ các đốm nhiễu quá nhỏ < 1.2% khung hình)
+        min_valid_box_area = w * h * 0.012
+        matching_cands = []
+        for cand in self._cached_candidates:
+            b = cand["bbox"]
+            bw, bh = float(b[2] - b[0]), float(b[3] - b[1])
+            box_area = bw * bh
+            if box_area < min_valid_box_area:
+                continue
+            if self.point_in_bbox(tx, ty, b, pad=12):
+                m = cand["mask"]
+                if m.shape[:2] != (h, w):
+                    m = cv2.resize(m.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
+                matching_cands.append((box_area, float(cand["conf"]), m, b, str(cand["category"])))
+
+        yolo_bbox = None
+        yolo_mask = None
+        if matching_cands:
+            # Ưu tiên BBox trang phục cụ thể (nhỏ hơn BBox toàn thân nhưng >= 1.2% khung hình)
+            matching_cands.sort(key=lambda x: (x[0], -x[1]))
+            _, selected_conf, yolo_mask, yolo_bbox, selected_category = matching_cands[0]
+
+        # 2. Giải mã Mask chi tiết bằng Point-SAM (kết hợp BBox của YOLO-World nếu có)
+        if self.point_sam is not None:
+            try:
+                sam_kwargs = {
+                    "source": img_bgr,
+                    "points": [[tx, ty]],
+                    "labels": [1],
+                    "device": self.device,
+                    "verbose": False
+                }
+                # Nếu YOLO-World đã bắt được khung áo, truyền kèm bboxes để SAM cắt trọn vẹn cả chiếc áo
+                if yolo_bbox is not None:
+                    sam_kwargs["bboxes"] = [[float(v) for v in yolo_bbox[:4]]]
+
+                sam_results = self.point_sam.predict(**sam_kwargs)
+                if sam_results and len(sam_results) > 0 and sam_results[0].masks is not None:
+                    m_data = sam_results[0].masks.data
+                    valid_sam_masks = []
+                    # Ngưỡng diện tích tối thiểu: 1.5% khung hình hoặc 35% diện tích BBox của YOLO
+                    min_mask_area = max(w * h * 0.015, (float((yolo_bbox[2]-yolo_bbox[0])*(yolo_bbox[3]-yolo_bbox[1])) * 0.35) if yolo_bbox is not None else 0.0)
+
+                    for i in range(len(m_data)):
+                        m_cand = (m_data[i].cpu().numpy() > 0).astype(np.uint8)
+                        if m_cand.shape[:2] != (h, w):
+                            m_cand = cv2.resize(m_cand, (w, h), interpolation=cv2.INTER_NEAREST)
+                        area = float(np.sum(m_cand > 0))
+                        # Tuyệt đối bỏ qua các đốm tròn nhỏ (như icon click chuột hoặc 1 chiếc cúc áo)
+                        if min_mask_area <= area <= (w * h * 0.90):
+                            valid_sam_masks.append((area, m_cand))
+
+                    if valid_sam_masks:
+                        # Lấy mask có diện tích đầy đặn nhất cho trang phục
+                        valid_sam_masks.sort(key=lambda x: x[0], reverse=True)
+                        selected_mask = valid_sam_masks[0][1]
+                        extraction_mode = "point_sam_with_box" if yolo_bbox is not None else "point_sam_prompt"
+            except Exception as ex_sam:
+                logger.warning(f"Point-SAM inference gặp lỗi ({ex_sam}), chuyển sang mask từ YOLO-World...")
+
+        # 3. Fallback an toàn nếu Point-SAM bị nhiễu bởi chấm tròn UI hoặc sọc áo
+        if selected_mask is None:
+            if yolo_mask is not None and yolo_bbox is not None:
+                selected_mask = yolo_mask
+                selected_bbox = yolo_bbox
+                extraction_mode = "cache_hit"
+            else:
+                extraction_mode = "dynamic_point_decode"
+                selected_mask, selected_bbox, selected_category, selected_conf = self._decode_point_prompt(
+                    img_bgr, tx, ty
+                )
+
+        # 4. Bảo toàn BBox của cả chiếc áo: không cho phép BBox bị co rút thành đốm nhỏ
         contour_norm, refined_mask = self.mask_to_normalized_contour(
             selected_mask, w, h, self.contour_epsilon_factor
         )
 
         ys, xs = np.where(refined_mask > 0)
         if len(xs) > 0 and len(ys) > 0:
-            selected_bbox = np.array([int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())], dtype=np.float32)
+            mask_bbox = np.array([int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())], dtype=np.float32)
+            mask_box_area = float((mask_bbox[2] - mask_bbox[0]) * (mask_bbox[3] - mask_bbox[1]))
+            # Nếu mask bị đứt gãy làm BBox quá nhỏ (< 2% diện tích ảnh), dùng BBox của YOLO hoặc mở rộng vùng cắt
+            if yolo_bbox is not None and mask_box_area < float((yolo_bbox[2] - yolo_bbox[0]) * (yolo_bbox[3] - yolo_bbox[1]) * 0.5):
+                selected_bbox = yolo_bbox
+                refined_mask[int(yolo_bbox[1]):int(yolo_bbox[3]), int(yolo_bbox[0]):int(yolo_bbox[2])] = 1
+            elif mask_box_area < (w * h * 0.02):
+                pad_w, pad_h = int(w * 0.18), int(h * 0.22)
+                bx1, by1 = max(0, tx - pad_w), max(0, ty - pad_h)
+                bx2, by2 = min(w, tx + pad_w), min(h, ty + pad_h)
+                selected_bbox = np.array([bx1, by1, bx2, by2], dtype=np.float32)
+                refined_mask[by1:by2, bx1:bx2] = 1
+            else:
+                selected_bbox = mask_bbox
+        else:
+            if yolo_bbox is not None:
+                selected_bbox = yolo_bbox
+            else:
+                pad_w, pad_h = int(w * 0.18), int(h * 0.22)
+                bx1, by1 = max(0, tx - pad_w), max(0, ty - pad_h)
+                bx2, by2 = min(w, tx + pad_w), min(h, ty + pad_h)
+                selected_bbox = np.array([bx1, by1, bx2, by2], dtype=np.float32)
 
         item_id = f"item_{image_name}_{tx}_{ty}"
         crop_webp_path = os.path.join(target_dir, f"{item_id}_{selected_category}.webp")
@@ -1540,7 +1647,30 @@ class SAM3Engine:
         tx: int,
         ty: int
     ) -> Tuple[np.ndarray, np.ndarray, str, float]:
-        """Giải mã phân đoạn khi người dùng click vào một điểm bất kỳ bằng GrabCut"""
+        """Giải mã phân đoạn khi người dùng click vào một điểm bất kỳ (ưu tiên Point-Prompted SAM)"""
+        if self.point_sam is not None:
+            try:
+                sam_res = self.point_sam.predict(
+                    source=img_bgr,
+                    points=[[tx, ty]],
+                    labels=[1],
+                    device=self.device,
+                    verbose=False
+                )
+                if sam_res and len(sam_res) > 0 and sam_res[0].masks is not None:
+                    m_data = sam_res[0].masks.data
+                    if len(m_data) > 0:
+                        m_np = (m_data[0].cpu().numpy() > 0).astype(np.uint8)
+                        h, w = img_bgr.shape[:2]
+                        if m_np.shape[:2] != (h, w):
+                            m_np = cv2.resize(m_np, (w, h), interpolation=cv2.INTER_NEAREST)
+                        ys, xs = np.where(m_np > 0)
+                        if len(xs) > 0 and len(ys) > 0:
+                            b_np = np.array([int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())], dtype=np.float32)
+                            return m_np, b_np, "fashion_item", 0.90
+            except Exception as e:
+                logger.debug(f"_decode_point_prompt SAM error: {e}")
+
         h, w = int(img_bgr.shape[0]), int(img_bgr.shape[1])
         pad_x = max(25, int(w * 0.15))
         pad_y = max(25, int(h * 0.15))

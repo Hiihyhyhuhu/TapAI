@@ -187,7 +187,6 @@
 
       const clickX = e.clientX;
       const clickY = e.clientY;
-      showRipple(clickX, clickY);
 
       const tapX = Math.max(0.0, Math.min(1.0, clickX / window.innerWidth));
       const tapY = Math.max(0.0, Math.min(1.0, clickY / window.innerHeight));
@@ -202,10 +201,10 @@
       isProcessing = true;
       showToast("🔍 TAP AI đang phân tích món đồ... Hãy xem Side Panel!");
 
-      // Dự phòng tự mở khóa sau 2 giây tránh kẹt trạng thái
+      // Dự phòng tự mở khóa sau 2.5 giây tránh kẹt trạng thái
       const unlockTimer = setTimeout(() => {
         isProcessing = false;
-      }, 2000);
+      }, 2500);
 
       try {
         chrome.runtime.sendMessage(
@@ -216,9 +215,12 @@
             image_url: imageUrl,
             tag_name: e.target?.tagName ? e.target.tagName.toLowerCase() : "unknown",
           },
-          () => {
+          (res) => {
             clearTimeout(unlockTimer);
             isProcessing = false;
+            // Hiển thị hiệu ứng gợn sóng CHỈ SAU KHI chụp màn hình hoàn tất
+            // Tránh tuyệt đối việc dính chấm tròn ngọc UI vào ảnh chụp gửi Backend VLM
+            showRipple(clickX, clickY);
             if (chrome.runtime?.lastError) {
               console.warn("TAP AI runtime message:", chrome.runtime.lastError.message);
             }
